@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin.auth' => \App\Http\Middleware\AdminOnly::class,
             'api.token' => \App\Http\Middleware\ApiTokenAuth::class,
+            'developer.only' => \App\Http\Middleware\DeveloperOnly::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
