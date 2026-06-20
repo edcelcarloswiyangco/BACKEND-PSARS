@@ -1,4 +1,4 @@
-<?php
+php artisan db:seed<?php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
