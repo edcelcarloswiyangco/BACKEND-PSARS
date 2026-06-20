@@ -239,6 +239,52 @@
                 @endif
             </div>
         </div>
+        
+        <!-- HTTP Logs Board -->
+        <div class="card" style="margin-top: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>🌐 HTTP Requests (Latest 50)</h2>
+            </div>
+            
+            <div style="overflow-x: auto; margin-top: 15px;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1;">
+                            <th style="padding: 12px; color: #475569;">Time</th>
+                            <th style="padding: 12px; color: #475569;">Method</th>
+                            <th style="padding: 12px; color: #475569;">Path</th>
+                            <th style="padding: 12px; color: #475569;">Status</th>
+                            <th style="padding: 12px; color: #475569;">IP Address</th>
+                            <th style="padding: 12px; color: #475569;">Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($logs as $log)
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 10px; color: #64748b; font-size: 14px;">{{ $log->created_at->format('M d, H:i:s') }}</td>
+                                <td style="padding: 10px;">
+                                    <span style="font-size: 13px; font-weight: bold; color: {{ $log->method === 'GET' ? '#0ea5e9' : ($log->method === 'POST' ? '#10b981' : ($log->method === 'DELETE' ? '#ef4444' : '#f59e0b')) }};">
+                                        {{ $log->method }}
+                                    </span>
+                                </td>
+                                <td style="padding: 10px; font-family: monospace; font-size: 14px;">/{{ $log->path }}</td>
+                                <td style="padding: 10px;">
+                                    <span style="display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; background: {{ $log->status >= 400 ? '#fee2e2' : ($log->status >= 300 ? '#fef3c7' : '#dcfce3') }}; color: {{ $log->status >= 400 ? '#b91c1c' : ($log->status >= 300 ? '#d97706' : '#166534') }};">
+                                        {{ $log->status }}
+                                    </span>
+                                </td>
+                                <td style="padding: 10px; font-size: 14px; color: #64748b;">{{ $log->ip_address }}</td>
+                                <td style="padding: 10px; font-size: 14px; color: #64748b;">{{ $log->duration_ms }} ms</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" style="padding: 20px; text-align: center; color: #94a3b8;">No requests logged yet.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </body>
 </html>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
+use App\Models\HttpLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
@@ -13,9 +14,12 @@ class DashboardController extends Controller
     public function index(): View
     {
         $admins = Admin::where('role', 'admin')->get();
+        // Fetch the latest 50 HTTP requests
+        $logs = HttpLog::latest()->take(50)->get();
 
         return view('developer.dashboard', [
             'admins' => $admins,
+            'logs' => $logs,
         ]);
     }
 

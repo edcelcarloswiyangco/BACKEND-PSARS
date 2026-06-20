@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->append(\App\Http\Middleware\LogHttpRequests::class);
         $middleware->alias([
             'admin.auth' => \App\Http\Middleware\AdminOnly::class,
             'api.token' => \App\Http\Middleware\ApiTokenAuth::class,
