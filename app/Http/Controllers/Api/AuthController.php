@@ -15,10 +15,10 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'full_name' => ['required', 'string', 'max:100'],
+            'full_name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6'],
-            'contact_number' => ['required', 'string', 'max:20'],
+            'password' => ['required', 'string', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/', 'confirmed'],
+            'contact_number' => ['required', 'regex:/^63\d{10}$/'],
             'address' => ['required', 'string', 'max:255'],
         ]);
 
