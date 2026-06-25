@@ -32,9 +32,9 @@ class AuthController extends Controller
             'building_name' => ['nullable', 'string', 'max:120'],
             'street_name' => ['required', 'string', 'max:120'],
             'barangay' => ['required', 'string', 'max:120'],
-            'city_municipality' => ['required', 'string', 'max:120'],
-            'province' => ['required', 'string', 'max:120'],
-            'zip_code' => ['required', 'string', 'regex:/^\d{4,10}$/'],
+            'city_municipality' => ['nullable', 'string', 'max:120'],
+            'province' => ['nullable', 'string', 'max:120'],
+            'zip_code' => ['nullable', 'string', 'regex:/^\d{4,10}$/'],
         ]);
 
         $fullName = $this->composeFullName($validated);
@@ -56,9 +56,6 @@ class AuthController extends Controller
             'building_name' => $validated['building_name'] ?? null,
             'street_name' => $validated['street_name'],
             'barangay' => $validated['barangay'],
-            'city_municipality' => $validated['city_municipality'],
-            'province' => $validated['province'],
-            'zip_code' => $validated['zip_code'],
             'address' => $address,
         ]);
 
@@ -218,9 +215,9 @@ class AuthController extends Controller
             $validated['building_name'] ?? null,
             $validated['street_name'],
             $validated['barangay'],
-            $validated['city_municipality'],
-            $validated['province'],
-            $validated['zip_code'],
+            $validated['city_municipality'] ?? null,
+            $validated['province'] ?? null,
+            $validated['zip_code'] ?? null,
         ];
 
         return implode(', ', array_values(array_filter($parts, fn ($part) => filled($part))));
