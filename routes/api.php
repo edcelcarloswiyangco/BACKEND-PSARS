@@ -15,8 +15,11 @@ Route::get('/health', function () {
 });
 
 Route::get('/media', [MediaController::class, 'show']);
-Route::post('/register', [AuthController::class, 'register']);
+Route::post('/register', [AuthController::class, 'requestRegistrationCode']);
+Route::post('/register/verify', [AuthController::class, 'verifyRegistrationCode']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/password/forgot', [AuthController::class, 'requestPasswordResetCode']);
+Route::post('/password/reset', [AuthController::class, 'resetPassword']);
 
 Route::middleware('api.token')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
