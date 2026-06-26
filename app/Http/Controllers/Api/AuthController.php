@@ -99,7 +99,7 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $user = User::query()->create([
+        $user = User::createWithRegistrationCode([
             'name' => $payload['full_name'],
             'full_name' => $payload['full_name'],
             'email' => $payload['email'],
@@ -320,6 +320,7 @@ class AuthController extends Controller
 
         return [
             'id' => $user->id,
+            'registration_code' => $user->registration_code,
             'full_name' => $user->full_name,
             'name' => $user->full_name,
             'email' => $user->email,

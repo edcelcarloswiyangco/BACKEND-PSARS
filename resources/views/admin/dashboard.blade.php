@@ -47,9 +47,14 @@
         .chart-box{min-height:320px}
         .chart-box.tall{min-height:360px}
         .report-toolbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px}
-        .report-filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-        .report-search{min-width:240px;max-width:360px;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px 12px;font:inherit;color:var(--text)}
-        .report-filter{border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px 12px;font:inherit;color:var(--text)}
+        .report-filters{display:flex;flex-direction:column;gap:12px;flex:1;min-width:min(100%,560px)}
+        .report-status-filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+        .report-status-label{font-size:12px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--muted);margin-right:4px}
+        .status-checkbox{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid var(--border);border-radius:999px;background:#fff;cursor:pointer;font-weight:700;color:var(--text)}
+        .status-checkbox input{accent-color:var(--accent)}
+        .report-search-wrap{min-width:240px;max-width:360px;flex:1}
+        .report-search{width:100%;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px 12px;font:inherit;color:var(--text)}
+        .report-no-results{display:none;margin-top:6px;padding:14px;border:1px dashed var(--border);border-radius:12px;background:#fbfdff}
         .report-status-pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
         .report-status-pill.pending{background:#fef3f2;color:#b42318}
         .report-status-pill.in_progress{background:#fffaeb;color:#b54708}
@@ -61,7 +66,7 @@
         .tabs{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
         .tab{background:transparent;border:1px solid var(--border);border-radius:999px;padding:10px 16px;color:var(--text);cursor:pointer;font-weight:700}
         .tab.active{background:#ecfdf3;color:var(--accent);border-color:#86efac}
-        .tab-panel.hidden{display:none}
+        .tab-panel.hidden,.hidden{display:none !important}
         .report-card{border:1px solid #d9e2ec;border-radius:12px;padding:16px;margin-bottom:16px;background:#f9fbfd}
         .report-card h4{margin:0 0 8px 0;font-size:16px}
         .report-row{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:#fff;margin-bottom:12px;gap:16px}
@@ -219,14 +224,13 @@
                                 <tbody>
                                     @foreach ($users as $user)
                                         <tr>
-                                            <td>{{ $user->id }}</td>
+                                            <td>{{ $user->registration_code }}</td>
                                             <td><strong>{{ $user->full_name ?? $user->name }}</strong><div class="muted">{{ $user->email }}</div></td>
                                             <td>{{ $user->contact_number ?? '-' }}</td>
                                             <td>{{ $user->reports_count ?? 0 }}</td>
                                             <td>
                                                 <button class="btn-ghost" onclick="openUser({{ $user->id }})">View</button>
                                             </td>
-                                        </tr>
                                     @endforeach
                                 </tbody>
                             </table>
@@ -309,23 +313,38 @@
                             <strong>Report Management</strong>
                             <div class="muted">Browse all submitted reports and open report details</div>
                         </div>
-                        <form method="GET" action="{{ route('admin.dashboard') }}" class="report-filters">
-                            <input type="hidden" name="section" value="report-management">
-                            <select name="report_status" class="report-filter" aria-label="Filter by status">
-                                <option value="">All Statuses</option>
-                                <option value="pending" {{ ($report_filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>Pending</option>
-                                <option value="in_progress" {{ ($report_filters['status'] ?? '') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                                <option value="resolved" {{ ($report_filters['status'] ?? '') === 'resolved' ? 'selected' : '' }}>Resolved</option>
-                            </select>
-                            <input
-                                type="search"
-                                name="report_search"
-                                class="report-search"
-                                placeholder="Search reports..."
-                                value="{{ $report_filters['search'] ?? '' }}"
-                            >
-                            <button class="btn" type="submit">Filter</button>
-                        </form>
+                        <div class="report-filters">
+                            <div class="report-search-wrap">
+                                <input
+                                    id="reportSearchInput"
+                                    type="search"
+                                    class="report-search"
+                                    placeholder="Search reports..."
+                                    autocomplete="off"
+                                    aria-autocomplete="list"
+                                    aria-expanded="false"
+                                >
+                            </div>
+                            <div id="reportStatusDropdown" class="report-status-filters" aria-label="Filter reports by status">
+                                <span class="report-status-label">Status</span>
+                                <label class="status-checkbox">
+                                    <input type="checkbox" value="all" checked data-status-option>
+                                    <span>All Statuses</span>
+                                </label>
+                                <label class="status-checkbox">
+                                    <input type="checkbox" value="pending" checked data-status-option>
+                                    <span>Pending</span>
+                                </label>
+                                <label class="status-checkbox">
+                                    <input type="checkbox" value="in_progress" checked data-status-option>
+                                    <span>In Progress</span>
+                                </label>
+                                <label class="status-checkbox">
+                                    <input type="checkbox" value="resolved" checked data-status-option>
+                                    <span>Resolved</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     @if ($reports->isEmpty())
@@ -334,16 +353,32 @@
                         <div>
                             @foreach ($reports as $report)
                                 @php
+                                    $reportCode = sprintf('R%s-%05d', optional($report->created_at)->format('y') ?? '00', $report->id);
+                                    $userCode = optional($report->user)
+                                        ? $report->user->registration_code
+                                        : null;
+                                @endphp
+                                @php
+                                    $reportSearchText = collect([
+                                        $reportCode,
+                                        $report->report_type,
+                                        $report->animal_type,
+                                        $userCode,
+                                        optional($report->user)->email,
+                                    ])->filter()->implode(' ');
+                                @endphp
+                                @php
                                     $reportNextStatus = match ($report->status) {
                                         'pending' => 'in_progress',
                                         'in_progress' => 'resolved',
                                         default => null,
                                     };
                                 @endphp
-                                <div class="report-row" data-report-id="{{ $report->id }}">
+                                <div class="report-row" data-report-id="{{ $report->id }}" data-report-status="{{ $report->status }}" data-report-search="{{ strtolower(e($reportSearchText)) }}">
                                     <div class="report-summary">
-                                        <h4>Report #{{ $report->id }} — {{ ucfirst($report->report_type) }} ({{ $report->animal_type }})</h4>
+                                        <h4>Report ID {{ $reportCode }} — {{ ucfirst($report->report_type) }} ({{ $report->animal_type }})</h4>
                                         <span class="muted">Submitted: {{ $report->created_at->format('M d, Y') }}</span>
+                                        <span class="muted">User ID: {{ $userCode ?? '-' }}</span>
                                         <div style="margin-top:8px">
                                             <span class="report-status-pill {{ $report->status }}">{{ str_replace('_', ' ', $report->status) }}</span>
                                         </div>
@@ -363,6 +398,7 @@
                                 </div>
                             @endforeach
                         </div>
+                        <div id="reportNoResults" class="report-no-results muted">No reports match your search and status filters.</div>
                     @endif
                 </div>
             @else
@@ -767,10 +803,18 @@
 
         @php
             $reportData = $reports->map(function ($report) {
+                $reportCode = sprintf('R%s-%05d', optional($report->created_at)->format('y') ?? '00', $report->id);
+                $userCode = optional($report->user)
+                    ? $report->user->registration_code
+                    : null;
+
                 return [
                     'id' => $report->id,
+                    'report_code' => $reportCode,
                     'report_type' => $report->report_type,
                     'animal_type' => $report->animal_type,
+                    'user_id' => optional($report->user)->id,
+                    'user_code' => $userCode,
                     'description' => $report->description,
                     'location_text' => $report->location_text,
                     'latitude' => $report->latitude,
@@ -787,6 +831,115 @@
         @endphp
 
         const reportData = @json($reportData);
+        const reportRows = Array.from(document.querySelectorAll('.report-row[data-report-id]'));
+        const reportSearchInput = document.getElementById('reportSearchInput');
+        const reportStatusDropdown = document.getElementById('reportStatusDropdown');
+        const reportNoResults = document.getElementById('reportNoResults');
+        const reportStatusInputs = reportStatusDropdown
+            ? Array.from(reportStatusDropdown.querySelectorAll('input[data-status-option]'))
+            : [];
+
+        function normalizeReportText(value) {
+            return String(value || '').toLowerCase().trim();
+        }
+
+        function getSelectedReportStatuses() {
+            const allInput = reportStatusInputs.find(input => input.value === 'all');
+            const selected = reportStatusInputs
+                .filter(input => input.value !== 'all' && input.checked)
+                .map(input => input.value);
+
+            if (allInput && allInput.checked) {
+                return ['pending', 'in_progress', 'resolved'];
+            }
+
+            return selected.length ? selected : ['pending', 'in_progress', 'resolved'];
+        }
+
+        function applyReportFilters() {
+            if (!reportRows.length) {
+                return;
+            }
+
+            const searchQuery = normalizeReportText(reportSearchInput ? reportSearchInput.value : '');
+            const selectedStatuses = getSelectedReportStatuses();
+
+            let visibleCount = 0;
+
+            reportRows.forEach(row => {
+                const rowStatus = row.dataset.reportStatus || '';
+                const rowSearch = row.dataset.reportSearch || '';
+                const matchesSearch = !searchQuery || rowSearch.includes(searchQuery);
+                const matchesStatus = selectedStatuses.includes(rowStatus);
+                const visible = matchesSearch && matchesStatus;
+
+                row.classList.toggle('hidden', !visible);
+                if (visible) {
+                    visibleCount += 1;
+                }
+            });
+
+            if (reportNoResults) {
+                reportNoResults.style.display = visibleCount === 0 ? 'block' : 'none';
+                reportNoResults.textContent = searchQuery
+                    ? 'No reports match your search and status filters.'
+                    : 'No reports match the selected status filters.';
+            }
+        }
+
+        function syncReportStatusInputs(changedInput) {
+            const allInput = reportStatusInputs.find(input => input.value === 'all');
+            if (!allInput) {
+                return;
+            }
+
+            if (changedInput.value === 'all') {
+                reportStatusInputs.forEach(input => {
+                    input.checked = changedInput.checked;
+                });
+            } else {
+                if (changedInput.checked) {
+                    allInput.checked = false;
+                }
+
+                const activeCount = reportStatusInputs.filter(input => input.value !== 'all' && input.checked).length;
+                if (activeCount === 0) {
+                    allInput.checked = true;
+                    reportStatusInputs.forEach(input => {
+                        if (input.value !== 'all') {
+                            input.checked = true;
+                        }
+                    });
+                }
+            }
+
+            applyReportFilters();
+        }
+
+        function initReportManagementFilters() {
+            if (!reportSearchInput || !reportStatusDropdown) {
+                return;
+            }
+
+            const allInput = reportStatusInputs.find(input => input.value === 'all');
+            if (allInput) {
+                allInput.checked = true;
+            }
+            reportStatusInputs.forEach(input => {
+                if (input.value !== 'all') {
+                    input.checked = true;
+                }
+                input.addEventListener('change', () => syncReportStatusInputs(input));
+            });
+
+            reportSearchInput.addEventListener('input', () => {
+                applyReportFilters();
+            });
+
+            applyReportFilters();
+        }
+
+        document.addEventListener('DOMContentLoaded', initReportManagementFilters);
 
         function openReport(id) {
             const report = reportData.find(r => r.id === id);
@@ -795,7 +948,7 @@
                 return;
             }
 
-            document.getElementById('reportModalTitle').textContent = `Report #${report.id} — ${report.report_type} (${report.animal_type})`;
+            document.getElementById('reportModalTitle').textContent = `Report ID ${report.report_code || report.id} — ${report.report_type} (${report.animal_type})`;
             document.getElementById('reportModalSubtitle').textContent = `${report.created_at} • ${reportLabel(report.status)}`;
 
             let mediaHtml = '';
@@ -808,7 +961,7 @@
 
             document.getElementById('reportDetails').innerHTML = `
                 <div class="report-card">
-                    <div class="report-meta"><strong>Submitted by:</strong> ${report.user_name || '-'}<br><strong>Email:</strong> ${report.user_email || '-'}<br><strong>Contact:</strong> ${report.user_contact || '-'}<br><strong>Location:</strong> ${report.location_text || '-'}<br><strong>Coordinates:</strong> ${report.latitude || '-'}, ${report.longitude || '-'}<br><strong>Status:</strong> ${reportLabel(report.status)}</div>
+                    <div class="report-meta"><strong>Report ID:</strong> ${report.report_code || report.id}<br><strong>User ID:</strong> ${report.user_code || report.user_id || '-'}<br><strong>Submitted by:</strong> ${report.user_name || '-'}<br><strong>Email:</strong> ${report.user_email || '-'}<br><strong>Contact:</strong> ${report.user_contact || '-'}<br><strong>Location:</strong> ${report.location_text || '-'}<br><strong>Coordinates:</strong> ${report.latitude || '-'}, ${report.longitude || '-'}<br><strong>Status:</strong> ${reportLabel(report.status)}</div>
                     <div class="report-meta" style="margin-top:12px"><strong>Description:</strong> ${report.description || '-'}</div>
                     ${mediaHtml || '<div class="muted">No media attached.</div>'}
                 </div>

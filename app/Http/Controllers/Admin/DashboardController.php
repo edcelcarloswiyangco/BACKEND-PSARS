@@ -17,8 +17,6 @@ class DashboardController extends Controller
     {
         $hasReportsTable = Schema::hasTable('animal_reports');
         $hasPetsTable = Schema::hasTable('pets');
-        $reportSearch = trim((string) request('report_search', ''));
-        $reportStatusFilter = trim((string) request('report_status', ''));
 
         $users = User::query()->latest()->get();
 
@@ -29,30 +27,8 @@ class DashboardController extends Controller
             $user->status = $user->email_verified_at ? 'active' : 'inactive';
         }
 
-        $reportsQuery = $hasReportsTable ? AnimalReport::query()->with('user') : null;
-
-        if ($reportsQuery) {
-            if ($reportStatusFilter !== '' && in_array($reportStatusFilter, ['pending', 'in_progress', 'resolved'], true)) {
-                $reportsQuery->where('status', $reportStatusFilter);
-            }
-
-            if ($reportSearch !== '') {
-                $reportsQuery->where(function ($query) use ($reportSearch) {
-                    $query->where('report_type', 'like', '%' . $reportSearch . '%')
-                        ->orWhere('animal_type', 'like', '%' . $reportSearch . '%')
-                        ->orWhere('location_text', 'like', '%' . $reportSearch . '%')
-                        ->orWhere('description', 'like', '%' . $reportSearch . '%')
-                        ->orWhereHas('user', function ($userQuery) use ($reportSearch) {
-                            $userQuery->where('full_name', 'like', '%' . $reportSearch . '%')
-                                ->orWhere('name', 'like', '%' . $reportSearch . '%')
-                                ->orWhere('email', 'like', '%' . $reportSearch . '%');
-                        });
-                });
-            }
-        }
-
-        $reports = $reportsQuery
-            ? $reportsQuery->latest('id')->get()
+        $reports = $hasReportsTable
+            ? AnimalReport::query()->with('user')->latest('id')->get()
             : collect();
 
         $todayStatusCounts = [
@@ -194,10 +170,6 @@ class DashboardController extends Controller
                 'total_pets' => $totalPets,
             ],
             'reports' => $reports,
-            'report_filters' => [
-                'search' => $reportSearch,
-                'status' => $reportStatusFilter,
-            ],
             'pets_by_status' => $petsByStatus,
             'analytics' => [
                 'today_status_counts' => $todayStatusCounts,
