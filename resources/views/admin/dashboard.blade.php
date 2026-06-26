@@ -392,11 +392,6 @@
                 </div>
                 <button onclick="closeModal()" class="btn-ghost">Close</button>
             </div>
-            <div class="tabs">
-                <button id="overviewTab" class="tab active" type="button" onclick="showTab('overview')">Overview</button>
-                <button id="petsTab" class="tab" type="button" onclick="showTab('pets')">Pets</button>
-                <button id="reportsTab" class="tab" type="button" onclick="showTab('reports')">Reports</button>
-            </div>
             <div id="tabOverview" class="tab-panel">
                 <div><strong>Email:</strong> <span id="modalEmail"></span></div>
                 <div><strong>Contact:</strong> <span id="modalContact"></span></div>
@@ -405,12 +400,6 @@
                 <div><strong>Registered:</strong> <span id="modalRegistered"></span></div>
                 <div><strong>Pets count:</strong> <span id="modalPetsCount"></span></div>
                 <div><strong>Reports count:</strong> <span id="modalReportsCount"></span></div>
-            </div>
-            <div id="tabPets" class="tab-panel hidden">
-                <div id="modalPets" class="muted">No pet records found.</div>
-            </div>
-            <div id="tabReports" class="tab-panel hidden">
-                <div id="modalReports" class="muted">No reports found.</div>
             </div>
         </div>
     </div>
@@ -755,14 +744,6 @@
             }
         });
 
-        function showTab(tabName) {
-            ['overview', 'pets', 'reports'].forEach(name => {
-                document.getElementById(name + 'Tab').classList.toggle('active', name === tabName);
-                document.getElementById('tab' + name.charAt(0).toUpperCase() + name.slice(1)).classList.toggle('hidden', name !== tabName);
-            });
-            document.getElementById('modalSubtitle').textContent = tabName === 'overview' ? 'Overview' : tabName === 'pets' ? 'Pets' : 'Reports';
-        }
-
         function openUser(id) {
             fetch('/admin/users/' + id + '/details')
                 .then(r => r.json())
@@ -775,50 +756,8 @@
                     document.getElementById('modalRegistered').textContent = data.registered_at || '-';
                     document.getElementById('modalPetsCount').textContent = data.pets_count ?? 0;
                     document.getElementById('modalReportsCount').textContent = data.reports_count ?? 0;
-
-                    const petsEl = document.getElementById('modalPets');
-                    if (data.pets && data.pets.length) {
-                        petsEl.innerHTML = '<ul>' + data.pets.map(p => '<li>' + (p.name || ('Pet #' + p.id)) + '</li>').join('') + '</ul>';
-                    } else {
-                        petsEl.textContent = 'No pet records found.';
-                    }
-
-                    const reportsEl = document.getElementById('modalReports');
-                    if (data.reports && data.reports.length) {
-                        reportsEl.innerHTML = data.reports.map(r => {
-                            let images = [];
-                            try {
-                                if (Array.isArray(r.image_paths)) {
-                                    images = r.image_paths;
-                                } else if (typeof r.image_paths === 'string' && r.image_paths.trim().length) {
-                                    images = JSON.parse(r.image_paths);
-                                }
-                            } catch (error) {
-                                images = [];
-                            }
-
-                            const imageHtml = images.length
-                                ? `<div class="report-media">${images.map(img => `<img src="/storage/${img}" alt="Report image">`).join('')}</div>`
-                                : '';
-                            const videoHtml = r.video_path ? `<div class="report-media"><video controls><source src="/storage/${r.video_path}" type="video/mp4"></video></div>` : '';
-                            return `
-                                <div class="report-card">
-                                    <h4>Report #${r.id} — ${r.report_type} (${r.animal_type})</h4>
-                                    <div class="report-meta"><strong>Location:</strong> ${r.location_text || '-'}<br><strong>Description:</strong> ${r.description || '-'}</div>
-                                    ${imageHtml}
-                                    ${videoHtml}
-                                </div>
-                            `;
-                        }).join('');
-                    } else {
-                        reportsEl.textContent = 'No reports found.';
-                    }
-
-                    if (data.reports && data.reports.length) {
-                        showTab('reports');
-                    } else {
-                        showTab('overview');
-                    }
+                    document.getElementById('modalSubtitle').textContent = 'Overview';
+                    document.getElementById('tabOverview').classList.remove('hidden');
                     document.getElementById('userModal').classList.add('show');
                 })
                 .catch(err => {
