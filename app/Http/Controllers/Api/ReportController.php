@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AnimalReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class ReportController extends Controller
 {
@@ -64,7 +65,7 @@ class ReportController extends Controller
             ? $request->file('video')->store('reports', 'public')
             : null;
 
-        $report = AnimalReport::query()->create([
+        $reportData = [
             'user_id' => $request->user()->id,
             'report_type' => $validated['report_type'],
             'animal_type' => $validated['animal_type'],
@@ -73,10 +74,15 @@ class ReportController extends Controller
             'longitude' => $validated['longitude'] ?? null,
             'description' => $validated['description'],
             'image_path' => $primaryImagePath,
-            'image_paths' => $paths,
             'video_path' => $videoPath,
             'status' => 'pending',
-        ]);
+        ];
+
+        if (Schema::hasColumn('animal_reports', 'image_paths')) {
+            $reportData['image_paths'] = $paths;
+        }
+
+        $report = AnimalReport::query()->create($reportData);
 
         return response()->json([
             'message' => 'Report submitted successfully.',
