@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AnimalReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 class ReportController extends Controller
 {
@@ -18,11 +19,7 @@ class ReportController extends Controller
 
         return response()->json([
             'data' => $reports->map(function (AnimalReport $report) {
-                $imagePaths = $report->image_paths;
-                if (is_string($imagePaths)) {
-                    $decoded = json_decode($imagePaths, true);
-                    $imagePaths = is_array($decoded) ? $decoded : [$report->image_path];
-                }
+                $imagePaths = $this->normalizeImagePaths($report);
 
                 return [
                     'id' => $report->id,
@@ -35,6 +32,7 @@ class ReportController extends Controller
                     'image_path' => $report->image_path,
                     'image_paths' => $imagePaths ?? [$report->image_path],
                     'video_path' => $report->video_path,
+                    'media_version' => $this->mediaVersion($report),
                     'status' => $report->status,
                     'resolved_at' => optional($report->resolved_at)->toIso8601String(),
                     'created_at' => optional($report->created_at)->toIso8601String(),
@@ -67,7 +65,7 @@ class ReportController extends Controller
             ? $request->file('video')->store('reports', 'public')
             : null;
 
-        $report = AnimalReport::query()->create([
+        $reportData = [
             'user_id' => $request->user()->id,
             'report_type' => $validated['report_type'],
             'animal_type' => $validated['animal_type'],
@@ -76,10 +74,15 @@ class ReportController extends Controller
             'longitude' => $validated['longitude'] ?? null,
             'description' => $validated['description'],
             'image_path' => $primaryImagePath,
-            'image_paths' => $paths,
             'video_path' => $videoPath,
             'status' => 'pending',
-        ]);
+        ];
+
+        if (Schema::hasColumn('animal_reports', 'image_paths')) {
+            $reportData['image_paths'] = $paths;
+        }
+
+        $report = AnimalReport::query()->create($reportData);
 
         return response()->json([
             'message' => 'Report submitted successfully.',
@@ -94,9 +97,36 @@ class ReportController extends Controller
                 'image_path' => $report->image_path,
                 'image_paths' => $report->image_paths ?? [$report->image_path],
                 'video_path' => $report->video_path,
+                'media_version' => $this->mediaVersion($report),
                 'status' => $report->status,
                 'resolved_at' => optional($report->resolved_at)->toIso8601String(),
             ],
         ], 201);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function normalizeImagePaths(AnimalReport $report): array
+    {
+        $imagePaths = $report->image_paths;
+
+        if (is_string($imagePaths)) {
+            $decoded = json_decode($imagePaths, true);
+            $imagePaths = is_array($decoded) ? $decoded : [$report->image_path];
+        }
+
+        if (! is_array($imagePaths) || $imagePaths === []) {
+            return $report->image_path ? [$report->image_path] : [];
+        }
+
+        return array_values(array_filter($imagePaths, static fn ($path) => is_string($path) && $path !== ''));
+    }
+
+    private function mediaVersion(AnimalReport $report): ?int
+    {
+        return $report->updated_at?->timestamp
+            ?? $report->created_at?->timestamp
+            ?? $report->id;
     }
 }
