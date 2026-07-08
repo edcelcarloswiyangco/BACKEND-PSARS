@@ -20,6 +20,7 @@ Route::post('/register', [AuthController::class, 'requestRegistrationCode']);
 Route::post('/register/verify', [AuthController::class, 'verifyRegistrationCode']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/password/forgot', [AuthController::class, 'requestPasswordResetCode']);
+Route::post('/password/verify', [AuthController::class, 'verifyPasswordResetCode']);
 Route::post('/password/reset', [AuthController::class, 'resetPassword']);
 
 Route::middleware('api.token')->group(function () {

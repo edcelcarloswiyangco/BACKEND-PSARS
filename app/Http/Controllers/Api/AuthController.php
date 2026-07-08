@@ -194,6 +194,31 @@ class AuthController extends Controller
         ]);
     }
 
+    public function verifyPasswordResetCode(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'max:255', 'exists:users,email'],
+            'code' => ['required', 'string', 'size:6'],
+        ]);
+
+        $resetCode = DB::table('auth_codes')
+            ->where('email', $validated['email'])
+            ->where('purpose', 'reset_password')
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (! $resetCode || ! Hash::check($validated['code'], $resetCode->code_hash)) {
+            return response()->json([
+                'message' => 'Invalid or expired reset code.',
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'Reset code is valid.',
+        ]);
+    }
+
     public function resetPassword(Request $request): JsonResponse
     {
         $validated = $request->validate([
