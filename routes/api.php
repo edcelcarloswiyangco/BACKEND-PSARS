@@ -15,6 +15,7 @@ Route::get('/health', function () {
 });
 
 Route::get('/media', [MediaController::class, 'show']);
+Route::post('/register/check-email', [AuthController::class, 'checkRegistrationEmail']);
 Route::post('/register', [AuthController::class, 'requestRegistrationCode']);
 Route::post('/register/verify', [AuthController::class, 'verifyRegistrationCode']);
 Route::post('/login', [AuthController::class, 'login']);

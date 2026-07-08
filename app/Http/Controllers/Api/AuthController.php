@@ -16,6 +16,23 @@ class AuthController extends Controller
 {
     private const CODE_EXPIRY_MINUTES = 10;
 
+    public function checkRegistrationEmail(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+        ]);
+
+        if (User::query()->where('email', $validated['email'])->exists()) {
+            return response()->json([
+                'message' => 'This email is already claimed or used.',
+            ], 422);
+        }
+
+        return response()->json([
+            'message' => 'This email is available.',
+        ]);
+    }
+
     public function requestRegistrationCode(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -24,6 +41,8 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'min:8', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/', 'confirmed'],
             'contact_number' => ['required', 'regex:/^63\d{10}$/'],
             'address' => ['required', 'string', 'max:255'],
+        ], [
+            'email.unique' => 'This email is already claimed or used.',
         ]);
 
         $code = $this->generateCode();
