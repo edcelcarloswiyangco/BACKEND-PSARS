@@ -103,19 +103,18 @@
                 <div>
                     @if ($section === 'dashboard')
                         <h2 style="margin:0">Dashboard</h2>
-                        <div class="muted">High-level overview of site activity</div>
+                        
                     @elseif ($section === 'user-management')
                         <h2 style="margin:0">User Management</h2>
-                        <div class="muted">Manage registered users and view account details</div>
+                        
                     @elseif ($section === 'pet-directory')
                         <h2 style="margin:0">Pet Directory</h2>
-                        <div class="muted">Review pet records and ownership details</div>
+                       
                     @elseif ($section === 'report-management')
                         <h2 style="margin:0">Report Management</h2>
-                        <div class="muted">View and manage submitted animal reports</div>
+                        
                     @else
                         <h2 style="margin:0">Settings</h2>
-                        <div class="muted">Admin account actions and system controls</div>
                     @endif
                 </div>
             </div>
@@ -240,7 +239,7 @@
             @elseif ($section === 'pet-directory')
                 <div>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-                        <div><strong>Pet Directory</strong><div class="muted">Explore all registered pets</div></div>
+                        
                     </div>
 
                     <!-- Vaccination Status Tabs -->
@@ -311,7 +310,7 @@
                     <div class="report-toolbar">
                         <div>
                             <strong>Report Management</strong>
-                            <div class="muted">Browse all submitted reports and open report details</div>
+                            
                         </div>
                         <div class="report-filters">
                             <div class="report-search-wrap">
@@ -404,7 +403,6 @@
             @else
                 <div class="card">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                        <div><strong>Settings</strong><div class="muted">Manage admin actions and account controls</div></div>
                     </div>
                     <div style="margin-bottom:16px">
                         <div><strong>Admin</strong></div>
