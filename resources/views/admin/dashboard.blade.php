@@ -77,6 +77,18 @@
         .report-media{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}
         .report-media img{width:calc(50% - 6px);max-width:220px;max-height:220px;border-radius:12px;object-fit:cover;border:1px solid #d9e2ec}
         .report-media video{width:100%;max-width:420px;border-radius:12px;border:1px solid #d9e2ec}
+        .announcement-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+        .announcement-card{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 10px 25px rgba(15,23,42,.04)}
+        .announcement-card img{width:100%;height:180px;object-fit:cover;display:block;background:#eef2f7}
+        .announcement-body{padding:16px}
+        .announcement-meta{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;color:var(--muted);font-size:13px;flex-wrap:wrap}
+        .announcement-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+        .announcement-form{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:18px}
+        .field{display:flex;flex-direction:column;gap:6px}
+        .field label{font-weight:700;font-size:13px}
+        .field input,.field textarea{width:100%;border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;font:inherit;color:var(--text)}
+        .field textarea{min-height:140px;resize:vertical}
+        .checkbox-row{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--text)}
         .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:flex;align-items:center;justify-content:center;padding:20px;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s}
         .modal.show{visibility:visible;opacity:1}
         .modal-card{background:#fff;border-radius:12px;max-width:880px;width:100%;padding:18px;max-height:calc(100vh - 60px);overflow:auto}
@@ -93,6 +105,7 @@
                 <a href="{{ route('admin.dashboard', ['section' => 'user-management']) }}" class="{{ $section === 'user-management' ? 'active' : '' }}">USER MANAGEMENT</a>
                 <a href="{{ route('admin.dashboard', ['section' => 'pet-directory']) }}" class="{{ $section === 'pet-directory' ? 'active' : '' }}">PET DIRECTORY</a>
                 <a href="{{ route('admin.dashboard', ['section' => 'report-management']) }}" class="{{ $section === 'report-management' ? 'active' : '' }}">REPORT MANAGEMENT</a>
+                <a href="{{ route('admin.dashboard', ['section' => 'announcements']) }}" class="{{ $section === 'announcements' ? 'active' : '' }}">ANNOUNCEMENTS</a>
                 <a href="{{ route('admin.dashboard', ['section' => 'settings']) }}" class="{{ $section === 'settings' ? 'active' : '' }}">SETTINGS</a>
             </nav>
             <div class="muted" style="margin-top:auto">Signed in as<br><strong>{{ auth('admin')->user()->email }}</strong></div>
@@ -112,6 +125,9 @@
                        
                     @elseif ($section === 'report-management')
                         <h2 style="margin:0">Report Management</h2>
+                        
+                    @elseif ($section === 'announcements')
+                        <h2 style="margin:0">Announcements</h2>
                         
                     @else
                         <h2 style="margin:0">Settings</h2>
@@ -398,6 +414,86 @@
                             @endforeach
                         </div>
                         <div id="reportNoResults" class="report-no-results muted">No reports match your search and status filters.</div>
+                    @endif
+                </div>
+            @elseif ($section === 'announcements')
+                <div class="card" style="margin-bottom:16px">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+                        <div>
+                            <strong>Post a new announcement</strong>
+                            <div class="muted">Publish an image, title, and description to the homepage feed.</div>
+                        </div>
+                        <div class="muted">Visible to users after publishing</div>
+                    </div>
+
+                    <form class="announcement-form" method="POST" action="{{ route('admin.announcements.store') }}" enctype="multipart/form-data">
+                        @csrf
+                        <div class="field">
+                            <label for="announcement-title">Title</label>
+                            <input id="announcement-title" name="title" type="text" maxlength="255" required placeholder="Important update for pet owners">
+                        </div>
+
+                        <div class="field">
+                            <label for="announcement-description">Description</label>
+                            <textarea id="announcement-description" name="description" required placeholder="Write the full announcement here."></textarea>
+                        </div>
+
+                        <div class="field">
+                            <label for="announcement-image">Image</label>
+                            <input id="announcement-image" name="image" type="file" accept="image/*">
+                        </div>
+
+                        <label class="checkbox-row">
+                            <input type="checkbox" name="is_published" value="1" checked>
+                            <span>Publish immediately</span>
+                        </label>
+
+                        <div>
+                            <button class="btn" type="submit">Publish Announcement</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+                        <div>
+                            <strong>Announcement feed</strong>
+                            <div class="muted">Manage the posts currently shown to users.</div>
+                        </div>
+                        <div class="muted">{{ ($announcements ?? collect())->count() }} total posts</div>
+                    </div>
+
+                    @if (($announcements ?? collect())->isEmpty())
+                        <div class="muted">No announcements have been posted yet.</div>
+                    @else
+                        <div class="announcement-grid">
+                            @foreach ($announcements as $announcement)
+                                <article class="announcement-card">
+                                    @if ($announcement->image_path)
+                                        <img src="{{ route('api.media', ['path' => $announcement->image_path]) }}" alt="{{ $announcement->title }}">
+                                    @endif
+                                    <div class="announcement-body">
+                                        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+                                            <div>
+                                                <h4 style="margin:0 0 6px 0">{{ $announcement->title }}</h4>
+                                                <div class="muted">{{ $announcement->description }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="announcement-meta">
+                                            <span>{{ optional($announcement->published_at ?? $announcement->created_at)->format('M d, Y h:i A') }}</span>
+                                            <span>{{ $announcement->is_published ? 'Published' : 'Draft' }}</span>
+                                        </div>
+                                        <div class="announcement-actions">
+                                            <form method="POST" action="{{ route('admin.announcements.destroy', $announcement) }}" onsubmit="return confirm('Delete this announcement?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn-ghost" type="submit" style="color:var(--danger);border-color:#fecaca">Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </article>
+                            @endforeach
+                        </div>
                     @endif
                 </div>
             @else

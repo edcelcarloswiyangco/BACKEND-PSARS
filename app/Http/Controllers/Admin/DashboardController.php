@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\AnimalReport;
 use App\Models\Pet;
 use App\Models\User;
@@ -55,6 +56,9 @@ class DashboardController extends Controller
             'unvaccinated' => 0,
         ];
         $registeredPetTypeDistribution = [];
+        $announcements = Schema::hasTable('announcements')
+            ? Announcement::query()->latest('published_at')->latest('id')->get()
+            : collect();
 
         if ($hasReportsTable) {
             $totalReports = AnimalReport::query()->count();
@@ -179,6 +183,7 @@ class DashboardController extends Controller
                 'pet_vaccination_distribution' => $petVaccinationDistribution,
                 'registered_pet_type_distribution' => $registeredPetTypeDistribution,
             ],
+            'announcements' => $announcements,
         ]);
     }
 
