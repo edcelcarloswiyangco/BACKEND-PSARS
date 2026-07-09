@@ -940,6 +940,13 @@
 
         document.addEventListener('DOMContentLoaded', initReportManagementFilters);
 
+        const mediaBaseUrl = @json(url('/api/media'));
+
+        function mediaUrl(path, mediaVersion = '') {
+            const version = mediaVersion ? `&v=${encodeURIComponent(mediaVersion)}` : '';
+            return `${mediaBaseUrl}?path=${encodeURIComponent(path)}${version}`;
+        }
+
         function openReport(id) {
             const report = reportData.find(r => r.id === id);
             if (!report) {
@@ -947,17 +954,17 @@
                 return;
             }
 
-            const mediaVersion = report.media_version ? `?v=${encodeURIComponent(report.media_version)}` : '';
+            const mediaVersion = report.media_version || '';
 
             document.getElementById('reportModalTitle').textContent = `Report ID ${report.report_code || report.id} — ${report.report_type} (${report.animal_type})`;
             document.getElementById('reportModalSubtitle').textContent = `${report.created_at} • ${reportLabel(report.status)}`;
 
             let mediaHtml = '';
             if (Array.isArray(report.image_paths) && report.image_paths.length) {
-                mediaHtml += '<div class="report-media">' + report.image_paths.map(path => `<img src="/storage/${path}${mediaVersion}" alt="Report image">`).join('') + '</div>';
+                mediaHtml += '<div class="report-media">' + report.image_paths.map(path => `<img src="${mediaUrl(path, mediaVersion)}" alt="Report image">`).join('') + '</div>';
             }
             if (report.video_path) {
-                mediaHtml += `<div class="report-media"><video controls><source src="/storage/${report.video_path}${mediaVersion}" type="video/mp4"></video></div>`;
+                mediaHtml += `<div class="report-media"><video controls><source src="${mediaUrl(report.video_path, mediaVersion)}" type="video/mp4"></video></div>`;
             }
 
             document.getElementById('reportDetails').innerHTML = `

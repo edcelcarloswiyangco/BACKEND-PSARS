@@ -1,8 +1,11 @@
 <div class="pet-card" style="background:var(--panel);border:1px solid rgba(15,23,42,.06);border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(15,23,42,.04);transition:transform .2s,box-shadow .2s">
+    @php
+        $petMediaUrl = fn (?string $path) => $path ? url('/api/media') . '?path=' . urlencode($path) : null;
+    @endphp
     <!-- Pet Photo -->
     <div style="width:100%;height:200px;background:#f0f5f5;display:flex;align-items:center;justify-content:center;overflow:hidden">
-        @if ($pet->pet_photo_path)
-            <img src="{{ asset('storage/' . $pet->pet_photo_path) }}" alt="{{ $pet->name }}" style="width:100%;height:100%;object-fit:cover">
+        @if ($pet->pet_photo_path && $petMediaUrl($pet->pet_photo_path))
+            <img src="{{ $petMediaUrl($pet->pet_photo_path) }}" alt="{{ $pet->name }}" style="width:100%;height:100%;object-fit:cover">
         @else
             <div style="font-size:48px;color:var(--muted)">🐾</div>
         @endif

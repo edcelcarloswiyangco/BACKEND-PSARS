@@ -7,10 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class MediaController extends Controller
 {
-    public function show(Request $request): RedirectResponse
+    public function show(Request $request): BinaryFileResponse|RedirectResponse
     {
         $path = (string) $request->query('path', '');
         $path = ltrim($path, '/');
@@ -26,12 +27,16 @@ class MediaController extends Controller
             abort(404);
         }
 
-        if (! Storage::disk('s3')->exists($path)) {
-            abort(404);
+        if (Storage::disk('s3')->exists($path)) {
+            return redirect()->away(
+                Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(15))
+            );
         }
 
-        return redirect()->away(
-            Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(15))
-        );
+        if (Storage::disk('public')->exists($path)) {
+            return response()->file(Storage::disk('public')->path($path));
+        }
+
+        abort(404);
     }
 }
