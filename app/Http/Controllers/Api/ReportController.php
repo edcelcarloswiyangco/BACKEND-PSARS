@@ -57,12 +57,12 @@ class ReportController extends Controller
 
         $paths = [];
         foreach ($request->file('images', []) as $imageFile) {
-            $paths[] = $imageFile->store('reports', 'public');
+            $paths[] = $imageFile->store('reports', 's3');
         }
 
         $primaryImagePath = $paths[0] ?? null;
         $videoPath = $request->hasFile('video')
-            ? $request->file('video')->store('reports', 'public')
+            ? $request->file('video')->store('reports', 's3')
             : null;
 
         $reportData = [
