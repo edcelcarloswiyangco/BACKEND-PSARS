@@ -8,6 +8,8 @@ use App\Models\AnimalReport;
 use App\Models\Pet;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
@@ -26,6 +28,7 @@ class DashboardController extends Controller
                 ? DB::table('animal_reports')->where('user_id', $user->id)->count()
                 : 0;
             $user->status = $this->resolveUserStatus($user);
+            $user->suspension_summary = $this->buildSuspensionSummary($user);
         }
 
         $reports = $hasReportsTable
@@ -189,6 +192,8 @@ class DashboardController extends Controller
 
     public function show(User $user)
     {
+        $status = $this->resolveUserStatus($user);
+
         $data = [
             'id' => $user->id,
             'full_name' => $user->full_name ?? $user->name,
@@ -196,7 +201,14 @@ class DashboardController extends Controller
             'contact_number' => $user->contact_number,
             'address' => $user->address,
             'registered_at' => $user->created_at ? $user->created_at->format('M d, Y') : null,
-            'status' => $this->resolveUserStatus($user),
+            'status' => $status,
+            'suspension_type' => $user->suspension_type,
+            'suspension_value' => $user->suspension_value,
+            'suspension_reason' => $user->suspension_reason,
+            'suspension_note' => $user->suspension_note,
+            'suspended_at' => optional($user->suspended_at)->format('M d, Y h:i A'),
+            'suspension_ends_at' => optional($user->suspension_ends_at)->format('M d, Y h:i A'),
+            'suspension_summary' => $this->buildSuspensionSummary($user),
         ];
 
         if (Schema::hasTable('pets')) {
@@ -219,11 +231,68 @@ class DashboardController extends Controller
 
     private function resolveUserStatus(User $user): string
     {
-        if (isset($user->status) && in_array($user->status, ['active', 'suspended', 'deactivated'], true)) {
-            return $user->status;
+        return $user->accountStatus();
+    }
+
+    private function buildSuspensionSummary(User $user): ?string
+    {
+        return $user->suspensionSummary();
+    }
+
+    public function suspendUser(Request $request, User $user): JsonResponse|\Illuminate\Http\RedirectResponse
+    {
+        $validated = $request->validate([
+            'suspension_type' => ['required', 'in:days,weeks,months,permanent'],
+            'suspension_value' => ['nullable', 'integer', 'min:1', 'required_if:suspension_type,days,weeks,months'],
+            'suspension_reason' => ['required', 'string', 'max:255'],
+            'suspension_note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $suspensionEndsAt = null;
+
+        if ($validated['suspension_type'] === 'days') {
+            $suspensionEndsAt = now()->addDays((int) $validated['suspension_value']);
+        } elseif ($validated['suspension_type'] === 'weeks') {
+            $suspensionEndsAt = now()->addWeeks((int) $validated['suspension_value']);
+        } elseif ($validated['suspension_type'] === 'months') {
+            $suspensionEndsAt = now()->addMonthsNoOverflow((int) $validated['suspension_value']);
         }
 
-        return $user->email_verified_at ? 'active' : 'deactivated';
+        $user->forceFill([
+            'status' => 'suspended',
+            'suspended_at' => now(),
+            'suspension_type' => $validated['suspension_type'],
+            'suspension_value' => $validated['suspension_type'] === 'permanent' ? null : (int) $validated['suspension_value'],
+            'suspension_reason' => $validated['suspension_reason'],
+            'suspension_note' => $validated['suspension_note'] ?? null,
+            'suspension_ends_at' => $suspensionEndsAt,
+        ])->save();
+
+        return $this->suspensionResponse($request, 'User suspended successfully.');
+    }
+
+    public function unsuspendUser(Request $request, User $user): JsonResponse|\Illuminate\Http\RedirectResponse
+    {
+        $user->forceFill([
+            'status' => 'active',
+            'suspended_at' => null,
+            'suspension_type' => null,
+            'suspension_value' => null,
+            'suspension_reason' => null,
+            'suspension_note' => null,
+            'suspension_ends_at' => null,
+        ])->save();
+
+        return $this->suspensionResponse($request, 'User suspension removed successfully.');
+    }
+
+    private function suspensionResponse(Request $request, string $message): JsonResponse|\Illuminate\Http\RedirectResponse
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $message]);
+        }
+
+        return back()->with('success', $message);
     }
 
     public function updateReportStatus(AnimalReport $report)
