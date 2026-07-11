@@ -26,6 +26,7 @@ Route::middleware('admin.auth')->group(function () {
     Route::get('/admin/users/{user}/details', [DashboardController::class, 'show'])->name('admin.users.show');
     Route::patch('/admin/reports/{report}/status', [DashboardController::class, 'updateReportStatus'])->name('admin.reports.status');
     Route::post('/admin/announcements', [AnnouncementController::class, 'store'])->name('admin.announcements.store');
+    Route::patch('/admin/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('admin.announcements.update');
     Route::delete('/admin/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('admin.announcements.destroy');
 });
 

@@ -25,7 +25,7 @@ class DashboardController extends Controller
             $user->reports_count = $hasReportsTable
                 ? DB::table('animal_reports')->where('user_id', $user->id)->count()
                 : 0;
-            $user->status = $user->email_verified_at ? 'active' : 'inactive';
+            $user->status = $this->resolveUserStatus($user);
         }
 
         $reports = $hasReportsTable
@@ -196,7 +196,7 @@ class DashboardController extends Controller
             'contact_number' => $user->contact_number,
             'address' => $user->address,
             'registered_at' => $user->created_at ? $user->created_at->format('M d, Y') : null,
-            'status' => $user->email_verified_at ? 'active' : 'inactive',
+            'status' => $this->resolveUserStatus($user),
         ];
 
         if (Schema::hasTable('pets')) {
@@ -215,6 +215,15 @@ class DashboardController extends Controller
         $data['reports_count'] = is_countable($data['reports']) ? count($data['reports']) : 0;
 
         return response()->json($data);
+    }
+
+    private function resolveUserStatus(User $user): string
+    {
+        if (isset($user->status) && in_array($user->status, ['active', 'suspended', 'deactivated'], true)) {
+            return $user->status;
+        }
+
+        return $user->email_verified_at ? 'active' : 'deactivated';
     }
 
     public function updateReportStatus(AnimalReport $report)
