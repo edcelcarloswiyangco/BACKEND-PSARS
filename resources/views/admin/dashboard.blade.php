@@ -23,6 +23,7 @@
         th{font-size:12px;color:var(--muted);text-transform:uppercase}
         .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:700;border:none;cursor:pointer}
         .btn-ghost{background:transparent;border:1px solid var(--border);padding:8px 12px;border-radius:8px;cursor:pointer}
+        .btn-danger{background:var(--danger);color:#fff;border:none}
         .muted{color:var(--muted)}
         .status.active{color:#027a48;font-weight:700}
         .status.inactive{color:#b45309;font-weight:700}
@@ -70,6 +71,18 @@
         .report-status-row-action,.btn-status{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
         .btn-status.secondary,.report-status-row-action.secondary{background:#f59e0b}
         .report-status-row-action[disabled],.btn-status[disabled]{opacity:.55;cursor:not-allowed}
+        .action-group{position:relative;display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .action-dropdown{position:relative}
+        .action-dropdown-toggle{display:inline-flex;align-items:center;gap:8px}
+        .action-dropdown-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:200px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 20px 40px rgba(15,23,42,.12);padding:8px;display:none;z-index:30}
+        .action-dropdown.open .action-dropdown-menu{display:block}
+        .action-dropdown-menu button,.action-dropdown-menu form{width:100%}
+        .action-dropdown-menu button{display:block;width:100%;text-align:left;background:transparent;border:none;padding:10px 12px;border-radius:10px;color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+        .action-dropdown-menu button:hover{background:#f8fafc}
+        .action-dropdown-menu .danger{color:var(--danger)}
+        .modal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+        .modal-summary-card{border:1px solid var(--border);border-radius:14px;background:#f8fafc;padding:14px}
+        .modal-summary-card strong{display:block;margin-bottom:6px}
         .tabs{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
         .tab{background:transparent;border:1px solid var(--border);border-radius:999px;padding:10px 16px;color:var(--text);cursor:pointer;font-weight:700}
         .tab.active{background:#ecfdf3;color:var(--accent);border-color:#86efac}
@@ -115,12 +128,18 @@
         .toast-ok{padding:8px 14px;white-space:nowrap}
         .field{display:flex;flex-direction:column;gap:6px}
         .field label{font-weight:700;font-size:13px}
-        .field input,.field textarea{width:100%;border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;font:inherit;color:var(--text)}
+        .field input,.field textarea,.field select{width:100%;border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;font:inherit;color:var(--text)}
         .field textarea{min-height:140px;resize:vertical}
+        .field-help{font-size:12px;color:var(--muted);line-height:1.4}
+        .modal-section{display:flex;flex-direction:column;gap:14px}
+        .modal-section + .modal-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+        .suspension-summary-text{font-weight:700;color:var(--text)}
         .checkbox-row{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--text)}
         .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:flex;align-items:center;justify-content:center;padding:20px;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s}
         .modal.show{visibility:visible;opacity:1}
         .modal-card{background:#fff;border-radius:12px;max-width:880px;width:100%;padding:18px;max-height:calc(100vh - 60px);overflow:auto}
+        .modal-card.narrow{max-width:720px}
+        .modal-card.wide{max-width:980px}
         @media (max-width:800px){.sidebar{display:none}.content{padding:16px}}
     </style>
 </head>
@@ -319,14 +338,34 @@
                                                 $user->contact_number,
                                             ])->filter()->implode(' ');
                                         @endphp
-                                        <tr data-user-search="{{ strtolower(e($userSearchText)) }}">
+                                        <tr
+                                            data-user-id="{{ $user->id }}"
+                                            data-user-name="{{ e($user->full_name ?? $user->name) }}"
+                                            data-user-status="{{ $user->status ?? 'deactivated' }}"
+                                            data-user-search="{{ strtolower(e($userSearchText)) }}"
+                                        >
                                             <td>{{ $user->registration_code }}</td>
                                             <td><strong>{{ $user->full_name ?? $user->name }}</strong><div class="muted">{{ $user->email }}</div></td>
                                             <td>{{ $user->contact_number ?? '-' }}</td>
                                             <td><span class="user-status-badge {{ $user->status ?? 'deactivated' }}">{{ ucfirst(str_replace('_', ' ', $user->status ?? 'deactivated')) }}</span></td>
                                             <td>{{ $user->reports_count ?? 0 }}</td>
                                             <td>
-                                                <button class="btn-ghost" onclick="openUser({{ $user->id }})">View</button>
+                                                <div class="action-group">
+                                                    <button class="btn-ghost" type="button" onclick="openUser({{ $user->id }})">View</button>
+                                                    <div class="action-dropdown" data-action-dropdown>
+                                                        <button class="btn-ghost action-dropdown-toggle" type="button" data-action-dropdown-toggle aria-haspopup="true" aria-expanded="false">
+                                                            Action
+                                                            <span aria-hidden="true">▾</span>
+                                                        </button>
+                                                        <div class="action-dropdown-menu" role="menu">
+                                                            @if (($user->status ?? 'deactivated') === 'suspended')
+                                                                <button type="button" class="danger" data-unsuspend-user="{{ $user->id }}">Unsuspend Account</button>
+                                                            @else
+                                                                <button type="button" data-suspend-user="{{ $user->id }}">Suspend Account</button>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -656,6 +695,90 @@
                 </div>
             </div>
             <div id="reportDetails"></div>
+        </div>
+    </div>
+
+    <div id="suspensionModal" class="modal" role="dialog" aria-hidden="true">
+        <div class="modal-card narrow">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px">
+                <div>
+                    <h3 id="suspensionModalTitle" style="margin:0">Suspend Account</h3>
+                    <div class="muted" id="suspensionModalSubtitle">Choose a reason and duration before continuing.</div>
+                </div>
+                <button type="button" class="btn-ghost" data-suspension-close>Close</button>
+            </div>
+
+            <div class="modal-grid" style="margin-bottom:14px">
+                <div class="modal-summary-card">
+                    <strong>Account</strong>
+                    <div id="suspensionUserName" class="suspension-summary-text">-</div>
+                    <div id="suspensionUserMeta" class="muted">-</div>
+                </div>
+                <div class="modal-summary-card">
+                    <strong>Status</strong>
+                    <div id="suspensionUserStatus" class="suspension-summary-text">-</div>
+                    <div id="suspensionUserSummary" class="muted">-</div>
+                </div>
+            </div>
+
+            <form id="suspensionForm" class="announcement-form" method="POST">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" id="suspensionTargetUserId" name="user_id" value="">
+
+                <div class="field">
+                    <label for="suspensionReason">Reason</label>
+                    <textarea id="suspensionReason" name="suspension_reason" required placeholder="Enter the reason for this suspension."></textarea>
+                </div>
+
+                <div class="field">
+                    <label for="suspensionType">Duration type</label>
+                    <select id="suspensionType" name="suspension_type" required>
+                        <option value="days">Days</option>
+                        <option value="weeks">Weeks</option>
+                        <option value="months">Months</option>
+                        <option value="permanent">Indefinite suspension</option>
+                    </select>
+                </div>
+
+                <div class="field" id="suspensionValueField">
+                    <label for="suspensionValue">Duration value</label>
+                    <input id="suspensionValue" name="suspension_value" type="number" min="1" step="1" value="1">
+                    <div class="field-help">Choose the number of days, weeks, or months.</div>
+                </div>
+
+                <div class="field">
+                    <label for="suspensionNote">Optional notes</label>
+                    <textarea id="suspensionNote" name="suspension_note" placeholder="Add any extra context or internal notes."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" data-suspension-close>Cancel</button>
+                    <button class="btn" type="submit">Suspend Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="suspensionConfirmModal" class="modal" role="dialog" aria-hidden="true">
+        <div class="modal-card narrow">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px">
+                <div>
+                    <h3 style="margin:0">Confirm Suspension</h3>
+                    <div class="muted">Are you sure you want to suspend this account?</div>
+                </div>
+                <button type="button" class="btn-ghost" data-suspension-confirm-cancel>Close</button>
+            </div>
+
+            <div class="modal-summary-card" style="margin-bottom:14px">
+                <strong id="suspensionConfirmUserName">-</strong>
+                <div id="suspensionConfirmSummary" class="muted">-</div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-ghost" data-suspension-confirm-cancel>Cancel</button>
+                <button id="confirmSuspensionButton" class="btn btn-danger" type="button">Confirm Suspension</button>
+            </div>
         </div>
     </div>
 
@@ -1117,6 +1240,26 @@
         const userSearchInput = document.getElementById('userSearchInput');
         const userRows = Array.from(document.querySelectorAll('tr[data-user-search]'));
         const userNoResults = document.getElementById('userNoResultsTable');
+        const actionDropdowns = Array.from(document.querySelectorAll('[data-action-dropdown]'));
+        const suspensionModal = document.getElementById('suspensionModal');
+        const suspensionConfirmModal = document.getElementById('suspensionConfirmModal');
+        const suspensionForm = document.getElementById('suspensionForm');
+        const suspensionTargetUserId = document.getElementById('suspensionTargetUserId');
+        const suspensionReasonInput = document.getElementById('suspensionReason');
+        const suspensionTypeInput = document.getElementById('suspensionType');
+        const suspensionValueField = document.getElementById('suspensionValueField');
+        const suspensionValueInput = document.getElementById('suspensionValue');
+        const suspensionNoteInput = document.getElementById('suspensionNote');
+        const suspensionUserName = document.getElementById('suspensionUserName');
+        const suspensionUserMeta = document.getElementById('suspensionUserMeta');
+        const suspensionUserStatus = document.getElementById('suspensionUserStatus');
+        const suspensionUserSummary = document.getElementById('suspensionUserSummary');
+        const suspensionConfirmUserName = document.getElementById('suspensionConfirmUserName');
+        const suspensionConfirmSummary = document.getElementById('suspensionConfirmSummary');
+        const confirmSuspensionButton = document.getElementById('confirmSuspensionButton');
+
+        let pendingSuspensionPayload = null;
+        let pendingSuspensionUser = null;
 
         function normalizeReportText(value) {
             return String(value || '').toLowerCase().trim();
@@ -1124,6 +1267,274 @@
 
         function normalizeUserText(value) {
             return String(value || '').toLowerCase().trim();
+        }
+
+        function getCsrfToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.content || '';
+        }
+
+        function closeActionDropdowns(exceptDropdown = null) {
+            actionDropdowns.forEach(dropdown => {
+                if (dropdown !== exceptDropdown) {
+                    dropdown.classList.remove('open');
+                    const toggle = dropdown.querySelector('[data-action-dropdown-toggle]');
+                    if (toggle) {
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                }
+            });
+        }
+
+        function bindActionDropdowns() {
+            actionDropdowns.forEach(dropdown => {
+                const toggle = dropdown.querySelector('[data-action-dropdown-toggle]');
+                if (!toggle) {
+                    return;
+                }
+
+                toggle.addEventListener('click', event => {
+                    event.stopPropagation();
+                    const isOpen = dropdown.classList.contains('open');
+                    closeActionDropdowns(dropdown);
+                    dropdown.classList.toggle('open', !isOpen);
+                    toggle.setAttribute('aria-expanded', String(!isOpen));
+                });
+
+                dropdown.querySelectorAll('[data-suspend-user]').forEach(button => {
+                    button.addEventListener('click', event => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        closeActionDropdowns();
+                        openSuspensionModal(Number(button.dataset.suspendUser));
+                    });
+                });
+
+                dropdown.querySelectorAll('[data-unsuspend-user]').forEach(button => {
+                    button.addEventListener('click', event => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        closeActionDropdowns();
+                        unsuspendUser(Number(button.dataset.unsuspendUser));
+                    });
+                });
+            });
+
+            document.addEventListener('click', () => closeActionDropdowns());
+        }
+
+        function suspensionLabel(type) {
+            if (type === 'days') {
+                return 'Days';
+            }
+
+            if (type === 'weeks') {
+                return 'Weeks';
+            }
+
+            if (type === 'months') {
+                return 'Months';
+            }
+
+            if (type === 'permanent') {
+                return 'Indefinite';
+            }
+
+            return 'Unknown';
+        }
+
+        function syncSuspensionDurationField() {
+            if (!suspensionTypeInput || !suspensionValueField || !suspensionValueInput) {
+                return;
+            }
+
+            const isPermanent = suspensionTypeInput.value === 'permanent';
+            suspensionValueField.classList.toggle('hidden', isPermanent);
+            suspensionValueInput.required = !isPermanent;
+
+            if (isPermanent) {
+                suspensionValueInput.value = '';
+            } else if (!suspensionValueInput.value) {
+                suspensionValueInput.value = '1';
+            }
+        }
+
+        function openModal(modalElement) {
+            if (modalElement) {
+                modalElement.classList.add('show');
+            }
+        }
+
+        function closeModalElement(modalElement) {
+            if (modalElement) {
+                modalElement.classList.remove('show');
+            }
+        }
+
+        function formatUserSummary(data) {
+            const name = data.full_name || data.name || `User ${data.id}`;
+            const meta = [data.email || '-', data.contact_number || '-'].join(' • ');
+            const summary = data.suspension_summary || 'No active suspension.';
+            const status = data.status || 'deactivated';
+
+            if (suspensionUserName) suspensionUserName.textContent = name;
+            if (suspensionUserMeta) suspensionUserMeta.textContent = meta;
+            if (suspensionUserStatus) suspensionUserStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+            if (suspensionUserSummary) suspensionUserSummary.textContent = summary;
+        }
+
+        function resetSuspensionDraft() {
+            pendingSuspensionPayload = null;
+            pendingSuspensionUser = null;
+
+            if (suspensionForm) {
+                suspensionForm.reset();
+            }
+
+            if (suspensionTargetUserId) {
+                suspensionTargetUserId.value = '';
+            }
+
+            syncSuspensionDurationField();
+        }
+
+        function populateSuspensionModal(data) {
+            pendingSuspensionUser = data;
+
+            if (suspensionTargetUserId) {
+                suspensionTargetUserId.value = data.id;
+            }
+
+            if (suspensionForm) {
+                suspensionForm.action = `/admin/users/${data.id}/suspension`;
+            }
+
+            if (suspensionReasonInput) {
+                suspensionReasonInput.value = '';
+            }
+
+            if (suspensionTypeInput) {
+                suspensionTypeInput.value = 'days';
+            }
+
+            if (suspensionValueInput) {
+                suspensionValueInput.value = '1';
+            }
+
+            if (suspensionNoteInput) {
+                suspensionNoteInput.value = '';
+            }
+
+            formatUserSummary(data);
+            syncSuspensionDurationField();
+        }
+
+        function openSuspensionModal(userId) {
+            fetch(`/admin/users/${userId}/details`)
+                .then(response => response.json())
+                .then(data => {
+                    const currentStatus = data.status || 'deactivated';
+
+                    if (currentStatus === 'suspended') {
+                        unsuspendUser(userId);
+                        return;
+                    }
+
+                    populateSuspensionModal(data);
+                    openModal(suspensionModal);
+                })
+                .catch(() => {
+                    alert('Unable to load user details');
+                });
+        }
+
+        function closeSuspensionModal() {
+            closeModalElement(suspensionModal);
+            resetSuspensionDraft();
+        }
+
+        function showSuspensionConfirmation(payload) {
+            pendingSuspensionPayload = payload;
+
+            const durationText = payload.suspension_type === 'permanent'
+                ? 'Indefinite suspension'
+                : `${payload.suspension_value} ${suspensionLabel(payload.suspension_type).toLowerCase()}`;
+
+            if (suspensionConfirmUserName) {
+                suspensionConfirmUserName.textContent = pendingSuspensionUser?.full_name || pendingSuspensionUser?.name || `User ${pendingSuspensionUser?.id || ''}`;
+            }
+
+            if (suspensionConfirmSummary) {
+                suspensionConfirmSummary.textContent = `${payload.suspension_reason} • ${durationText}`;
+            }
+
+            closeModalElement(suspensionModal);
+            openModal(suspensionConfirmModal);
+        }
+
+        function buildSuspensionPayload() {
+            const formData = new FormData(suspensionForm);
+            const suspensionType = String(formData.get('suspension_type') || 'days');
+            const payload = {
+                suspension_reason: String(formData.get('suspension_reason') || '').trim(),
+                suspension_type: suspensionType,
+                suspension_note: String(formData.get('suspension_note') || '').trim(),
+            };
+
+            if (suspensionType !== 'permanent') {
+                payload.suspension_value = String(formData.get('suspension_value') || '').trim();
+            }
+
+            return payload;
+        }
+
+        function submitSuspensionPayload() {
+            if (!pendingSuspensionUser || !pendingSuspensionPayload) {
+                return;
+            }
+
+            fetch(`/admin/users/${pendingSuspensionUser.id}/suspension`, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(pendingSuspensionPayload),
+            })
+                .then(async response => {
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Unable to suspend account');
+                    }
+
+                    window.location.reload();
+                })
+                .catch(error => {
+                    alert(error.message || 'Unable to suspend account');
+                });
+        }
+
+        function unsuspendUser(userId) {
+            fetch(`/admin/users/${userId}/suspension`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+            })
+                .then(async response => {
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Unable to unsuspend account');
+                    }
+
+                    window.location.reload();
+                })
+                .catch(error => {
+                    alert(error.message || 'Unable to unsuspend account');
+                });
         }
 
         function getSelectedReportStatuses() {
@@ -1222,6 +1633,54 @@
             applyReportFilters();
         }
 
+        function initUserSuspensionWorkflow() {
+            bindActionDropdowns();
+
+            if (suspensionTypeInput) {
+                suspensionTypeInput.addEventListener('change', syncSuspensionDurationField);
+            }
+
+            if (suspensionForm) {
+                suspensionForm.addEventListener('submit', event => {
+                    event.preventDefault();
+                    showSuspensionConfirmation(buildSuspensionPayload());
+                });
+            }
+
+            if (confirmSuspensionButton) {
+                confirmSuspensionButton.addEventListener('click', submitSuspensionPayload);
+            }
+
+            document.querySelectorAll('[data-suspension-close]').forEach(button => {
+                button.addEventListener('click', closeSuspensionModal);
+            });
+
+            document.querySelectorAll('[data-suspension-confirm-cancel]').forEach(button => {
+                button.addEventListener('click', () => {
+                    closeModalElement(suspensionConfirmModal);
+                    openModal(suspensionModal);
+                });
+            });
+
+            if (suspensionModal) {
+                suspensionModal.addEventListener('click', event => {
+                    if (event.target === suspensionModal) {
+                        closeSuspensionModal();
+                    }
+                });
+            }
+
+            if (suspensionConfirmModal) {
+                suspensionConfirmModal.addEventListener('click', event => {
+                    if (event.target === suspensionConfirmModal) {
+                        closeModalElement(suspensionConfirmModal);
+                    }
+                });
+            }
+
+            syncSuspensionDurationField();
+        }
+
         function applyUserFilters() {
             if (!userRows.length) {
                 return;
@@ -1262,6 +1721,7 @@
 
         document.addEventListener('DOMContentLoaded', initReportManagementFilters);
         document.addEventListener('DOMContentLoaded', initUserManagementSearch);
+        document.addEventListener('DOMContentLoaded', initUserSuspensionWorkflow);
 
         const mediaBaseUrl = @json(url('/api/media'));
 
@@ -1310,6 +1770,13 @@
 
         function closeModal() { document.getElementById('userModal').classList.remove('show'); }
         function closeReportModal() { document.getElementById('reportModal').classList.remove('show'); }
+
+        function initUserSuspensionControls() {
+            if (suspensionTypeInput) {
+                suspensionTypeInput.addEventListener('change', syncSuspensionDurationField);
+                syncSuspensionDurationField();
+            }
+        }
 
         function initAnnouncementTabs() {
             const tabButtons = Array.from(document.querySelectorAll('[data-announcement-tab]'));

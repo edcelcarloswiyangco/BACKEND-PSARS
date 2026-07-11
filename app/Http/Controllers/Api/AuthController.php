@@ -156,6 +156,12 @@ class AuthController extends Controller
             ], 422);
         }
 
+        if ($user->accountStatus() === 'suspended') {
+            return response()->json([
+                'message' => 'Your account has been suspended. Please contact the admin.',
+            ], 422);
+        }
+
         return response()->json($this->issueTokenResponse($user));
     }
 
@@ -370,6 +376,14 @@ class AuthController extends Controller
             'email' => $user->email,
             'contact_number' => $user->contact_number,
             'address' => $user->address,
+            'status' => $user->accountStatus(),
+            'suspension_type' => $user->suspension_type,
+            'suspension_value' => $user->suspension_value,
+            'suspension_reason' => $user->suspension_reason,
+            'suspension_note' => $user->suspension_note,
+            'suspended_at' => optional($user->suspended_at)->toIso8601String(),
+            'suspension_ends_at' => optional($user->suspension_ends_at)->toIso8601String(),
+            'suspension_summary' => $user->suspensionSummary(),
             'is_admin' => false,
         ];
     }
