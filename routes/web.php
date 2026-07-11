@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Developer\AuthController as DeveloperAuthController;
 use App\Http\Controllers\Developer\DashboardController as DeveloperDashboardController;
@@ -24,6 +25,8 @@ Route::middleware('admin.auth')->group(function () {
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/admin/users/{user}/details', [DashboardController::class, 'show'])->name('admin.users.show');
     Route::patch('/admin/reports/{report}/status', [DashboardController::class, 'updateReportStatus'])->name('admin.reports.status');
+    Route::post('/admin/announcements', [AnnouncementController::class, 'store'])->name('admin.announcements.store');
+    Route::delete('/admin/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('admin.announcements.destroy');
 });
 
 // Developer Routes

@@ -21,7 +21,8 @@ class MediaController extends Controller
             ! (
                 Str::startsWith($path, 'reports/') ||
                 Str::startsWith($path, 'pet_photos/') ||
-                Str::startsWith($path, 'vaccination_cards/')
+                Str::startsWith($path, 'vaccination_cards/') ||
+                Str::startsWith($path, 'announcements/')
             )
         ) {
             abort(404);

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AnnouncementController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\PetController;
 use App\Http\Controllers\Api\PetVaccinationController;
@@ -14,7 +15,8 @@ Route::get('/health', function () {
     ]);
 });
 
-Route::get('/media', [MediaController::class, 'show']);
+Route::get('/media', [MediaController::class, 'show'])->name('api.media');
+Route::get('/announcements', [AnnouncementController::class, 'index']);
 Route::post('/register/check-email', [AuthController::class, 'checkRegistrationEmail']);
 Route::post('/register', [AuthController::class, 'requestRegistrationCode']);
 Route::post('/register/verify', [AuthController::class, 'verifyRegistrationCode']);
