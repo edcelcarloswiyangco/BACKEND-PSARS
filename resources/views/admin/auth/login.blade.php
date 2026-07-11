@@ -73,7 +73,7 @@
     <div class="card">
         <div class="eyebrow">Admin Access</div>
         <h1>Sign in to the dashboard</h1>
-        <p>Only the admin account can access the web dashboard.</p>
+        
 
         @if ($errors->any())
             <div class="error">{{ $errors->first() }}</div>

@@ -15,7 +15,7 @@ class UserController extends Controller
         return response()->json([
             'data' => User::query()
                 ->latest('id')
-                ->get(['id', 'name', 'email', 'created_at']),
+                ->get(['id', 'name', 'email', 'created_at', 'registration_year', 'registration_sequence']),
         ]);
     }
 
@@ -27,7 +27,7 @@ class UserController extends Controller
             'password' => ['required', 'string', 'min:6'],
         ]);
 
-        $user = User::query()->create([
+        $user = User::createWithRegistrationCode([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
@@ -35,7 +35,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'User created successfully.',
-            'data' => $user->only(['id', 'name', 'email', 'created_at']),
+            'data' => $user->only(['id', 'registration_code', 'name', 'email', 'created_at']),
         ], 201);
     }
 }

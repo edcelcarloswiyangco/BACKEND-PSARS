@@ -31,7 +31,7 @@ class PetVaccinationController extends Controller
             ]);
         }
 
-        $cardPath = $request->file('vaccination_card')->store('vaccination_cards', 'public');
+        $cardPath = $request->file('vaccination_card')->store('vaccination_cards', 's3');
 
         $pet->vaccinationRecords()->create([
             'vaccination_date' => $validated['vaccination_date'],

@@ -54,12 +54,12 @@ class PetController extends Controller
         $petPhotoPath = null;
 
         if ($request->hasFile('pet_photo')) {
-            $petPhotoPath = $request->file('pet_photo')->store('pet_photos', 'public');
+            $petPhotoPath = $request->file('pet_photo')->store('pet_photos', 's3');
         }
 
         if ($request->hasFile('vaccination_card')) {
             $file = $request->file('vaccination_card');
-            $path = $file->store('vaccination_cards', 'public');
+            $path = $file->store('vaccination_cards', 's3');
             $vaccinationCardPath = $path;
         }
 
@@ -120,17 +120,17 @@ class PetController extends Controller
 
         if ($request->hasFile('pet_photo')) {
             if ($pet->pet_photo_path) {
-                Storage::disk('public')->delete($pet->pet_photo_path);
+                Storage::disk('s3')->delete($pet->pet_photo_path);
             }
-            $validated['pet_photo_path'] = $request->file('pet_photo')->store('pet_photos', 'public');
+            $validated['pet_photo_path'] = $request->file('pet_photo')->store('pet_photos', 's3');
         }
 
         if ($request->hasFile('vaccination_card')) {
             if ($pet->vaccination_card_path) {
-                Storage::disk('public')->delete($pet->vaccination_card_path);
+                Storage::disk('s3')->delete($pet->vaccination_card_path);
             }
             $file = $request->file('vaccination_card');
-            $path = $file->store('vaccination_cards', 'public');
+            $path = $file->store('vaccination_cards', 's3');
             $validated['vaccination_card_path'] = $path;
         }
 
@@ -164,10 +164,10 @@ class PetController extends Controller
         }
 
         if ($pet->vaccination_card_path) {
-            Storage::disk('public')->delete($pet->vaccination_card_path);
+            Storage::disk('s3')->delete($pet->vaccination_card_path);
         }
         if ($pet->pet_photo_path) {
-            Storage::disk('public')->delete($pet->pet_photo_path);
+            Storage::disk('s3')->delete($pet->pet_photo_path);
         }
 
         $pet->delete();
@@ -191,7 +191,7 @@ class PetController extends Controller
 
         $this->seedLegacyVaccinationRecord($pet);
 
-        $cardPath = $request->file('vaccination_card')->store('vaccination_cards', 'public');
+        $cardPath = $request->file('vaccination_card')->store('vaccination_cards', 's3');
 
         $pet->vaccinationRecords()->create([
             'vaccination_date' => $validated['vaccination_date'],

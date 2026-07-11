@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\AnimalReport;
 use App\Models\Pet;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
@@ -17,8 +20,6 @@ class DashboardController extends Controller
     {
         $hasReportsTable = Schema::hasTable('animal_reports');
         $hasPetsTable = Schema::hasTable('pets');
-        $reportSearch = trim((string) request('report_search', ''));
-        $reportStatusFilter = trim((string) request('report_status', ''));
 
         $users = User::query()->latest()->get();
 
@@ -26,33 +27,12 @@ class DashboardController extends Controller
             $user->reports_count = $hasReportsTable
                 ? DB::table('animal_reports')->where('user_id', $user->id)->count()
                 : 0;
-            $user->status = $user->email_verified_at ? 'active' : 'inactive';
+            $user->status = $this->resolveUserStatus($user);
+            $user->suspension_summary = $this->buildSuspensionSummary($user);
         }
 
-        $reportsQuery = $hasReportsTable ? AnimalReport::query()->with('user') : null;
-
-        if ($reportsQuery) {
-            if ($reportStatusFilter !== '' && in_array($reportStatusFilter, ['pending', 'in_progress', 'resolved'], true)) {
-                $reportsQuery->where('status', $reportStatusFilter);
-            }
-
-            if ($reportSearch !== '') {
-                $reportsQuery->where(function ($query) use ($reportSearch) {
-                    $query->where('report_type', 'like', '%' . $reportSearch . '%')
-                        ->orWhere('animal_type', 'like', '%' . $reportSearch . '%')
-                        ->orWhere('location_text', 'like', '%' . $reportSearch . '%')
-                        ->orWhere('description', 'like', '%' . $reportSearch . '%')
-                        ->orWhereHas('user', function ($userQuery) use ($reportSearch) {
-                            $userQuery->where('full_name', 'like', '%' . $reportSearch . '%')
-                                ->orWhere('name', 'like', '%' . $reportSearch . '%')
-                                ->orWhere('email', 'like', '%' . $reportSearch . '%');
-                        });
-                });
-            }
-        }
-
-        $reports = $reportsQuery
-            ? $reportsQuery->latest('id')->get()
+        $reports = $hasReportsTable
+            ? AnimalReport::query()->with('user')->latest('id')->get()
             : collect();
 
         $todayStatusCounts = [
@@ -79,6 +59,9 @@ class DashboardController extends Controller
             'unvaccinated' => 0,
         ];
         $registeredPetTypeDistribution = [];
+        $announcements = Schema::hasTable('announcements')
+            ? Announcement::query()->latest('published_at')->latest('id')->get()
+            : collect();
 
         if ($hasReportsTable) {
             $totalReports = AnimalReport::query()->count();
@@ -194,10 +177,6 @@ class DashboardController extends Controller
                 'total_pets' => $totalPets,
             ],
             'reports' => $reports,
-            'report_filters' => [
-                'search' => $reportSearch,
-                'status' => $reportStatusFilter,
-            ],
             'pets_by_status' => $petsByStatus,
             'analytics' => [
                 'today_status_counts' => $todayStatusCounts,
@@ -207,11 +186,14 @@ class DashboardController extends Controller
                 'pet_vaccination_distribution' => $petVaccinationDistribution,
                 'registered_pet_type_distribution' => $registeredPetTypeDistribution,
             ],
+            'announcements' => $announcements,
         ]);
     }
 
     public function show(User $user)
     {
+        $status = $this->resolveUserStatus($user);
+
         $data = [
             'id' => $user->id,
             'full_name' => $user->full_name ?? $user->name,
@@ -219,7 +201,14 @@ class DashboardController extends Controller
             'contact_number' => $user->contact_number,
             'address' => $user->address,
             'registered_at' => $user->created_at ? $user->created_at->format('M d, Y') : null,
-            'status' => $user->email_verified_at ? 'active' : 'inactive',
+            'status' => $status,
+            'suspension_type' => $user->suspension_type,
+            'suspension_value' => $user->suspension_value,
+            'suspension_reason' => $user->suspension_reason,
+            'suspension_note' => $user->suspension_note,
+            'suspended_at' => optional($user->suspended_at)->format('M d, Y h:i A'),
+            'suspension_ends_at' => optional($user->suspension_ends_at)->format('M d, Y h:i A'),
+            'suspension_summary' => $this->buildSuspensionSummary($user),
         ];
 
         if (Schema::hasTable('pets')) {
@@ -238,6 +227,72 @@ class DashboardController extends Controller
         $data['reports_count'] = is_countable($data['reports']) ? count($data['reports']) : 0;
 
         return response()->json($data);
+    }
+
+    private function resolveUserStatus(User $user): string
+    {
+        return $user->accountStatus();
+    }
+
+    private function buildSuspensionSummary(User $user): ?string
+    {
+        return $user->suspensionSummary();
+    }
+
+    public function suspendUser(Request $request, User $user): JsonResponse|\Illuminate\Http\RedirectResponse
+    {
+        $validated = $request->validate([
+            'suspension_type' => ['required', 'in:days,weeks,months,permanent'],
+            'suspension_value' => ['nullable', 'integer', 'min:1', 'required_if:suspension_type,days,weeks,months'],
+            'suspension_reason' => ['required', 'string', 'max:255'],
+            'suspension_note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $suspensionEndsAt = null;
+
+        if ($validated['suspension_type'] === 'days') {
+            $suspensionEndsAt = now()->addDays((int) $validated['suspension_value']);
+        } elseif ($validated['suspension_type'] === 'weeks') {
+            $suspensionEndsAt = now()->addWeeks((int) $validated['suspension_value']);
+        } elseif ($validated['suspension_type'] === 'months') {
+            $suspensionEndsAt = now()->addMonthsNoOverflow((int) $validated['suspension_value']);
+        }
+
+        $user->forceFill([
+            'status' => 'suspended',
+            'suspended_at' => now(),
+            'suspension_type' => $validated['suspension_type'],
+            'suspension_value' => $validated['suspension_type'] === 'permanent' ? null : (int) $validated['suspension_value'],
+            'suspension_reason' => $validated['suspension_reason'],
+            'suspension_note' => $validated['suspension_note'] ?? null,
+            'suspension_ends_at' => $suspensionEndsAt,
+        ])->save();
+
+        return $this->suspensionResponse($request, 'User suspended successfully.');
+    }
+
+    public function unsuspendUser(Request $request, User $user): JsonResponse|\Illuminate\Http\RedirectResponse
+    {
+        $user->forceFill([
+            'status' => 'active',
+            'suspended_at' => null,
+            'suspension_type' => null,
+            'suspension_value' => null,
+            'suspension_reason' => null,
+            'suspension_note' => null,
+            'suspension_ends_at' => null,
+        ])->save();
+
+        return $this->suspensionResponse($request, 'User suspension removed successfully.');
+    }
+
+    private function suspensionResponse(Request $request, string $message): JsonResponse|\Illuminate\Http\RedirectResponse
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $message]);
+        }
+
+        return back()->with('success', $message);
     }
 
     public function updateReportStatus(AnimalReport $report)
