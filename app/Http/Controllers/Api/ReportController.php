@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AnimalReport;
+use App\Services\ReportDetectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -41,7 +42,7 @@ class ReportController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, ReportDetectionService $reportDetectionService): JsonResponse
     {
         $validated = $request->validate([
             'report_type' => ['required', 'string', 'max:50'],
@@ -83,6 +84,8 @@ class ReportController extends Controller
         }
 
         $report = AnimalReport::query()->create($reportData);
+
+        $reportDetectionService->syncGroupRelatedCases();
 
         return response()->json([
             'message' => 'Report submitted successfully.',

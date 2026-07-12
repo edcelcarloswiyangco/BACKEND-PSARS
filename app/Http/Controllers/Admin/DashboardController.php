@@ -7,6 +7,7 @@ use App\Models\Announcement;
 use App\Models\AnimalReport;
 use App\Models\Pet;
 use App\Models\User;
+use App\Services\ReportDetectionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -16,10 +17,14 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(ReportDetectionService $reportDetectionService): View
     {
         $hasReportsTable = Schema::hasTable('animal_reports');
         $hasPetsTable = Schema::hasTable('pets');
+
+        if ($hasReportsTable) {
+            $reportDetectionService->syncGroupRelatedCases();
+        }
 
         $users = User::query()->latest()->get();
 
@@ -34,8 +39,11 @@ class DashboardController extends Controller
         $reports = $hasReportsTable
             ? AnimalReport::query()->with('user')->latest('id')->get()
             : collect();
-        $relatedReportGroups = $hasReportsTable
-            ? $this->buildRelatedReportGroups($reports)
+        $userMultipleReportGroups = $hasReportsTable
+            ? $reportDetectionService->buildUserMultipleGroups($reports)
+            : [];
+        $groupRelatedCases = $hasReportsTable
+            ? $reportDetectionService->buildGroupRelatedCases()
             : [];
 
         $todayStatusCounts = [
@@ -180,7 +188,8 @@ class DashboardController extends Controller
                 'total_pets' => $totalPets,
             ],
             'reports' => $reports,
-            'related_report_groups' => $relatedReportGroups,
+            'user_multiple_report_groups' => $userMultipleReportGroups,
+            'group_related_cases' => $groupRelatedCases,
             'pets_by_status' => $petsByStatus,
             'analytics' => [
                 'today_status_counts' => $todayStatusCounts,
@@ -327,6 +336,25 @@ class DashboardController extends Controller
                 'status' => $report->status,
                 'resolved_at' => optional($report->resolved_at)->toIso8601String(),
             ],
+        ]);
+    }
+
+    public function removeReportFromGroup(Request $request, ReportDetectionService $reportDetectionService): JsonResponse
+    {
+        $validated = $request->validate([
+            'group_type' => ['required', 'in:user_multiple,group_related'],
+            'group_key' => ['required', 'string', 'max:255'],
+            'report_id' => ['required', 'integer', 'exists:animal_reports,id'],
+        ]);
+
+        $reportDetectionService->excludeReportFromGroup(
+            $validated['group_type'],
+            $validated['group_key'],
+            (int) $validated['report_id']
+        );
+
+        return response()->json([
+            'message' => 'Report removed from detected group.',
         ]);
     }
 

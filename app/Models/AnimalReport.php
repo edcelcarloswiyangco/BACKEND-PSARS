@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AnimalReport extends Model
@@ -35,5 +36,11 @@ class AnimalReport extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function detectionCases(): BelongsToMany
+    {
+        return $this->belongsToMany(ReportDetectionCase::class, 'report_detection_case_reports')
+            ->withTimestamps();
     }
 }

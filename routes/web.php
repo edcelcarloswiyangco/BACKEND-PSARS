@@ -27,6 +27,7 @@ Route::middleware('admin.auth')->group(function () {
     Route::patch('/admin/users/{user}/suspension', [DashboardController::class, 'suspendUser'])->name('admin.users.suspend');
     Route::delete('/admin/users/{user}/suspension', [DashboardController::class, 'unsuspendUser'])->name('admin.users.unsuspend');
     Route::patch('/admin/reports/{report}/status', [DashboardController::class, 'updateReportStatus'])->name('admin.reports.status');
+    Route::post('/admin/report-groups/remove-report', [DashboardController::class, 'removeReportFromGroup'])->name('admin.report-groups.remove-report');
     Route::post('/admin/announcements', [AnnouncementController::class, 'store'])->name('admin.announcements.store');
     Route::patch('/admin/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('admin.announcements.update');
     Route::delete('/admin/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('admin.announcements.destroy');

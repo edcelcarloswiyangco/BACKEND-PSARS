@@ -71,6 +71,9 @@
         .related-group-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
         .related-group-header h4{margin:0;font-size:16px}
         .related-group-badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#ecfdf3;color:var(--accent);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+        .report-case-badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;background:#eff6ff;color:#1d4ed8}
+        .report-case-badge.open_for_matching{background:#ecfdf3;color:#027a48}
+        .report-case-badge.closed_for_matching{background:#f1f5f9;color:#475569}
         .related-group-meta{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;color:#475569;line-height:1.5}
         .related-group-meta span{display:inline-flex;align-items:center;gap:4px;padding:8px 10px;border:1px solid #d9e2ec;border-radius:999px;background:#fff}
         .related-group-meta strong{color:var(--text)}
@@ -79,6 +82,8 @@
         .related-report-summary{flex:1;min-width:0}
         .related-report-summary h5{margin:0 0 4px 0;font-size:15px}
         .related-report-summary .muted{display:block;font-size:13px;margin-top:4px;color:var(--muted)}
+        .detection-group-card{border-color:#cbd5e1}
+        .report-row.highlighted{outline:3px solid #86efac;box-shadow:0 0 0 4px rgba(134,239,172,.2)}
         .report-status-pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
         .report-status-pill.pending{background:#fef3f2;color:#b42318}
         .report-status-pill.in_progress{background:#fffaeb;color:#b54708}
@@ -295,6 +300,22 @@
                 </div>
             </div>
             <div id="reportDetails"></div>
+        </div>
+    </div>
+
+    <div id="groupRemovalConfirmModal" class="modal" role="dialog" aria-hidden="true">
+        <div class="modal-card narrow">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px">
+                <div>
+                    <h3 id="groupRemovalConfirmTitle" style="margin:0">Remove Report from Group?</h3>
+                    <div class="muted" id="groupRemovalConfirmMessage">This report will only be removed from this detected group. The original report will remain unchanged in All Reports.</div>
+                </div>
+                <button type="button" class="btn-ghost" onclick="closeGroupRemovalConfirmModal()">Close</button>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-ghost" onclick="closeGroupRemovalConfirmModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmGroupRemovalButton" onclick="submitGroupRemoval()">Remove</button>
+            </div>
         </div>
     </div>
 
@@ -859,10 +880,15 @@
         const suspensionConfirmUserName = document.getElementById('suspensionConfirmUserName');
         const suspensionConfirmSummary = document.getElementById('suspensionConfirmSummary');
         const confirmSuspensionButton = document.getElementById('confirmSuspensionButton');
+        const groupRemovalConfirmModal = document.getElementById('groupRemovalConfirmModal');
+        const groupRemovalConfirmTitle = document.getElementById('groupRemovalConfirmTitle');
+        const groupRemovalConfirmMessage = document.getElementById('groupRemovalConfirmMessage');
+        const confirmGroupRemovalButton = document.getElementById('confirmGroupRemovalButton');
 
         let currentUserModalData = null;
         let pendingSuspensionPayload = null;
         let pendingSuspensionUser = null;
+        let pendingGroupRemovalPayload = null;
         let toastTimer = null;
 
         function normalizeReportText(value) {
@@ -1261,34 +1287,41 @@
             }
         }
 
-        function initReportManagementTabs() {
+        function showReportManagementTab(tabName) {
             const tabButtons = Array.from(document.querySelectorAll('[data-report-tab]'));
             const panels = {
                 all: document.getElementById('allReportsPanel'),
-                related: document.getElementById('relatedReportsPanel'),
+                'user-multiple': document.getElementById('userMultipleReportsPanel'),
+                'group-related': document.getElementById('groupRelatedReportsPanel'),
             };
 
-            if (!tabButtons.length || !panels.all || !panels.related) {
+            if (!tabButtons.length || !panels.all || !panels['user-multiple'] || !panels['group-related']) {
                 return;
             }
 
-            const activateTab = (tabName) => {
-                tabButtons.forEach(button => {
-                    const isActive = button.dataset.reportTab === tabName;
-                    button.classList.toggle('active', isActive);
-                    button.setAttribute('aria-selected', isActive ? 'true' : 'false');
-                });
-
-                Object.entries(panels).forEach(([name, panel]) => {
-                    panel.classList.toggle('hidden', name !== tabName);
-                });
-            };
-
             tabButtons.forEach(button => {
-                button.addEventListener('click', () => activateTab(button.dataset.reportTab || 'all'));
+                const isActive = button.dataset.reportTab === tabName;
+                button.classList.toggle('active', isActive);
+                button.setAttribute('aria-selected', isActive ? 'true' : 'false');
             });
 
-            activateTab('all');
+            Object.entries(panels).forEach(([name, panel]) => {
+                panel.classList.toggle('hidden', name !== tabName);
+            });
+        }
+
+        function initReportManagementTabs() {
+            const tabButtons = Array.from(document.querySelectorAll('[data-report-tab]'));
+
+            if (!tabButtons.length) {
+                return;
+            }
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => showReportManagementTab(button.dataset.reportTab || 'all'));
+            });
+
+            showReportManagementTab('all');
         }
 
         function syncReportStatusInputs(changedInput) {
@@ -1474,6 +1507,82 @@
             }
 
             document.getElementById('reportModal').classList.add('show');
+        }
+
+        function viewReportInAllReports(id) {
+            showReportManagementTab('all');
+
+            window.setTimeout(() => {
+                const row = document.querySelector(`#allReportsPanel .report-row[data-report-id="${id}"]`);
+                if (row) {
+                    row.classList.add('highlighted');
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    window.setTimeout(() => row.classList.remove('highlighted'), 1800);
+                }
+                openReport(id);
+            }, 0);
+        }
+
+        function confirmRemoveFromGroup(groupType, groupKey, reportId, reportCode) {
+            pendingGroupRemovalPayload = { group_type: groupType, group_key: groupKey, report_id: reportId };
+
+            if (groupRemovalConfirmTitle) {
+                groupRemovalConfirmTitle.textContent = 'Remove Report from Group?';
+            }
+
+            if (groupRemovalConfirmMessage) {
+                groupRemovalConfirmMessage.textContent = `Report ${reportCode} will only be removed from this detected group. The original report will remain unchanged in All Reports.`;
+            }
+
+            if (confirmGroupRemovalButton) {
+                confirmGroupRemovalButton.disabled = false;
+            }
+
+            if (groupRemovalConfirmModal) {
+                groupRemovalConfirmModal.classList.add('show');
+            }
+        }
+
+        function closeGroupRemovalConfirmModal() {
+            if (groupRemovalConfirmModal) {
+                groupRemovalConfirmModal.classList.remove('show');
+            }
+
+            pendingGroupRemovalPayload = null;
+        }
+
+        function submitGroupRemoval() {
+            if (!pendingGroupRemovalPayload) {
+                return;
+            }
+
+            if (confirmGroupRemovalButton) {
+                confirmGroupRemovalButton.disabled = true;
+            }
+
+            fetch(`{{ url('/admin/report-groups/remove-report') }}`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(pendingGroupRemovalPayload),
+            }).then(async response => {
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload.message || 'Unable to remove report from group');
+                }
+
+                closeGroupRemovalConfirmModal();
+                window.location.reload();
+            }).catch(error => {
+                if (confirmGroupRemovalButton) {
+                    confirmGroupRemovalButton.disabled = false;
+                }
+                alert(error.message || 'Unable to remove report from group');
+            });
         }
 
         function closeModal() { document.getElementById('userModal').classList.remove('show'); }
