@@ -57,12 +57,28 @@
         .report-status-label{font-size:12px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--muted);margin-right:4px}
         .status-checkbox{display:inline-flex;align-items:center;gap:8px;padding:9px 12px;border:1px solid var(--border);border-radius:999px;background:#fff;cursor:pointer;font-weight:700;color:var(--text)}
         .status-checkbox input{accent-color:var(--accent)}
+        .report-management-card{display:flex;flex-direction:column;gap:16px}
+        .report-tabs{margin-bottom:0}
+        .report-tab-panel{display:flex;flex-direction:column;gap:16px}
         .report-search-wrap{min-width:240px;max-width:360px;flex:1}
         .report-search{width:100%;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px 12px;font:inherit;color:var(--text)}
         .user-search-wrap{min-width:240px;max-width:420px;flex:1}
         .user-search{width:100%;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px 12px;font:inherit;color:var(--text)}
         .user-no-results{display:none;margin-top:6px;padding:14px;border:1px dashed var(--border);border-radius:12px;background:#fbfdff}
         .report-no-results{display:none;margin-top:6px;padding:14px;border:1px dashed var(--border);border-radius:12px;background:#fbfdff}
+        .related-report-groups{display:flex;flex-direction:column;gap:16px}
+        .related-group-card{border:1px solid var(--border);border-radius:16px;background:#f8fbfd;padding:18px;box-shadow:0 8px 22px rgba(15,23,42,.04)}
+        .related-group-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+        .related-group-header h4{margin:0;font-size:16px}
+        .related-group-badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:#ecfdf3;color:var(--accent);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
+        .related-group-meta{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;color:#475569;line-height:1.5}
+        .related-group-meta span{display:inline-flex;align-items:center;gap:4px;padding:8px 10px;border:1px solid #d9e2ec;border-radius:999px;background:#fff}
+        .related-group-meta strong{color:var(--text)}
+        .related-report-list{display:flex;flex-direction:column;gap:12px}
+        .related-report-item{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:#fff}
+        .related-report-summary{flex:1;min-width:0}
+        .related-report-summary h5{margin:0 0 4px 0;font-size:15px}
+        .related-report-summary .muted{display:block;font-size:13px;margin-top:4px;color:var(--muted)}
         .report-status-pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
         .report-status-pill.pending{background:#fef3f2;color:#b42318}
         .report-status-pill.in_progress{background:#fffaeb;color:#b54708}
@@ -748,6 +764,7 @@
             if (document.getElementById('vaccinationChart')) renderVaccinationChart();
             if (document.getElementById('registeredPetTypeChart')) renderRegisteredPetTypeChart();
             initToast();
+            initReportManagementTabs();
             initAnnouncementTabs();
             initImagePreviews();
             initAnnouncementActionModals();
@@ -804,7 +821,7 @@
         @endphp
 
         const reportData = @json($reportData);
-        const reportRows = Array.from(document.querySelectorAll('.report-row[data-report-id]'));
+        const reportRows = Array.from(document.querySelectorAll('#allReportsPanel .report-row[data-report-id]'));
         const reportSearchInput = document.getElementById('reportSearchInput');
         const reportStatusDropdown = document.getElementById('reportStatusDropdown');
         const reportNoResults = document.getElementById('reportNoResults');
@@ -1242,6 +1259,36 @@
                     ? 'No reports match your search and status filters.'
                     : 'No reports match the selected status filters.';
             }
+        }
+
+        function initReportManagementTabs() {
+            const tabButtons = Array.from(document.querySelectorAll('[data-report-tab]'));
+            const panels = {
+                all: document.getElementById('allReportsPanel'),
+                related: document.getElementById('relatedReportsPanel'),
+            };
+
+            if (!tabButtons.length || !panels.all || !panels.related) {
+                return;
+            }
+
+            const activateTab = (tabName) => {
+                tabButtons.forEach(button => {
+                    const isActive = button.dataset.reportTab === tabName;
+                    button.classList.toggle('active', isActive);
+                    button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                });
+
+                Object.entries(panels).forEach(([name, panel]) => {
+                    panel.classList.toggle('hidden', name !== tabName);
+                });
+            };
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => activateTab(button.dataset.reportTab || 'all'));
+            });
+
+            activateTab('all');
         }
 
         function syncReportStatusInputs(changedInput) {

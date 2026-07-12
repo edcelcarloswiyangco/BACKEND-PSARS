@@ -19,50 +19,6 @@ class AuthController extends Controller
     public function checkRegistrationEmail(Request $request): JsonResponse
     {
         $validated = $request->validate([
-<<<<<<< HEAD
-            'first_name' => ['required', 'string', 'max:60'],
-            'middle_name' => ['nullable', 'string', 'max:60'],
-            'last_name' => ['required', 'string', 'max:60'],
-            'suffix' => ['nullable', 'string', 'in:Jr.,Sr.,II,III,IV'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => [
-                'required',
-                'string',
-                'min:12',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-\[\]{};:,.<>]).{12,}$/',
-            ],
-            'country_code' => ['required', 'string', 'regex:/^\+\d{1,4}$/', 'max:8'],
-            'phone_number' => ['required', 'string', 'regex:/^\d{7,15}$/'],
-            'house_number' => ['nullable', 'string', 'max:30'],
-            'building_name' => ['nullable', 'string', 'max:120'],
-            'street_name' => ['required', 'string', 'max:120'],
-            'barangay' => ['required', 'string', 'max:120'],
-            'city_municipality' => ['nullable', 'string', 'max:120'],
-            'province' => ['nullable', 'string', 'max:120'],
-            'zip_code' => ['nullable', 'string', 'regex:/^\d{4,10}$/'],
-        ]);
-
-        $fullName = $this->composeFullName($validated);
-        $contactNumber = $this->composeContactNumber($validated);
-        $address = $this->composeAddress($validated);
-
-        $user = User::query()->create([
-            'name' => $fullName,
-            'full_name' => $fullName,
-            'first_name' => $validated['first_name'],
-            'middle_name' => $validated['middle_name'] ?? null,
-            'last_name' => $validated['last_name'],
-            'suffix' => $validated['suffix'] ?? null,
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'country_code' => $validated['country_code'],
-            'contact_number' => $contactNumber,
-            'house_number' => $validated['house_number'] ?? null,
-            'building_name' => $validated['building_name'] ?? null,
-            'street_name' => $validated['street_name'],
-            'barangay' => $validated['barangay'],
-            'address' => $address,
-=======
             'email' => ['required', 'email', 'max:255'],
         ]);
 
@@ -74,7 +30,6 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'This email is available.',
->>>>>>> origin/marvin-dev
         ]);
     }
 
