@@ -71,18 +71,14 @@
         .report-status-row-action,.btn-status{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
         .btn-status.secondary,.report-status-row-action.secondary{background:#f59e0b}
         .report-status-row-action[disabled],.btn-status[disabled]{opacity:.55;cursor:not-allowed}
-        .action-group{position:relative;display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}
-        .action-dropdown{position:relative}
-        .action-dropdown-toggle{display:inline-flex;align-items:center;gap:8px}
-        .action-dropdown-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:200px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 20px 40px rgba(15,23,42,.12);padding:8px;display:none;z-index:30}
-        .action-dropdown.open .action-dropdown-menu{display:block}
-        .action-dropdown-menu button,.action-dropdown-menu form{width:100%}
-        .action-dropdown-menu button{display:block;width:100%;text-align:left;background:transparent;border:none;padding:10px 12px;border-radius:10px;color:var(--text);font:inherit;font-weight:700;cursor:pointer}
-        .action-dropdown-menu button:hover{background:#f8fafc}
-        .action-dropdown-menu .danger{color:var(--danger)}
         .modal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
         .modal-summary-card{border:1px solid var(--border);border-radius:14px;background:#f8fafc;padding:14px}
         .modal-summary-card strong{display:block;margin-bottom:6px}
+        .modal-section-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+        .modal-section-title strong{font-size:15px}
+        .modal-section-copy{margin:8px 0 0;color:var(--muted);line-height:1.5}
+        .account-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+        .account-actions .btn,.account-actions .btn-ghost,.account-actions .btn-danger{min-width:160px;justify-content:center}
         .tabs{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
         .tab{background:transparent;border:1px solid var(--border);border-radius:999px;padding:10px 16px;color:var(--text);cursor:pointer;font-weight:700}
         .tab.active{background:#ecfdf3;color:var(--accent);border-color:#86efac}
@@ -220,443 +216,17 @@
             @endif
 
             @if ($section === 'dashboard')
-                <div class="summary-grid">
-                    <div class="stat-card">
-                        <strong>Total Users</strong>
-                        <div class="muted">{{ $summary['total_users'] ?? 0 }} accounts</div>
-                    </div>
-                    <div class="stat-card">
-                        <strong>Total Reports</strong>
-                        <div class="muted">{{ $summary['total_reports'] ?? 0 }} reports submitted</div>
-                    </div>
-                    <div class="stat-card">
-                        <strong>Total Pets</strong>
-                        <div class="muted">{{ $summary['total_pets'] ?? 0 }} registered pets</div>
-                    </div>
-                </div>
-
-                <div class="analytics-grid">
-                    <div class="card metric-card pending">
-                        <div>
-                            <strong>Pending Today</strong>
-                            <div class="metric-value">{{ $analytics['today_status_counts']['pending'] ?? 0 }}</div>
-                        </div>
-                        <div class="metric-note">Reports created today</div>
-                    </div>
-                    <div class="card metric-card in-progress">
-                        <div>
-                            <strong>In Progress Today</strong>
-                            <div class="metric-value">{{ $analytics['today_status_counts']['in_progress'] ?? 0 }}</div>
-                        </div>
-                        <div class="metric-note">Reports created today</div>
-                    </div>
-                    <div class="card metric-card resolved">
-                        <div>
-                            <strong>Resolved Today</strong>
-                            <div class="metric-value">{{ $analytics['today_status_counts']['resolved'] ?? 0 }}</div>
-                        </div>
-                        <div class="metric-note">Reports created today</div>
-                    </div>
-                </div>
-
-                <div class="charts-grid">
-                    <div class="chart-card wide">
-                        <div class="chart-toolbar">
-                            <div>
-                                <h3>Report Trend</h3>
-                                <div class="muted">Daily report volume for the last 7 days, this month, or today</div>
-                            </div>
-                            <select id="trendRange" class="chart-select" aria-label="Select trend range">
-                                <option value="today" selected>Today</option>
-                                <option value="seven_days">Last 7 Days</option>
-                                <option value="month">This Month</option>
-                            </select>
-                        </div>
-                        <div id="trendChart" class="chart-box"></div>
-                    </div>
-
-                    <div class="chart-card">
-                        <h3>Animal Type Distribution</h3>
-                        <div id="animalTypeChart" class="chart-box tall"></div>
-                    </div>
-
-                    <div class="chart-card">
-                        <h3>Report status</h3>
-                        <div id="statusBarChart" class="chart-box tall"></div>
-                    </div>
-
-                    <div class="chart-card">
-                        <h3>Vaccinated vs Unvaccinated</h3>
-                        <div id="vaccinationChart" class="chart-box tall"></div>
-                    </div>
-
-                    <div class="chart-card">
-                        <h3>Most Registered Animal Type</h3>
-                        <div id="registeredPetTypeChart" class="chart-box tall"></div>
-                    </div>
-                </div>
+                @include('admin.sections.dashboard')
             @elseif ($section === 'user-management')
-                <div class="card">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                        <div><strong>Total users</strong><div class="muted">{{ $users->count() }} accounts registered</div></div>
-                        <div class="muted">Last updated: {{ now()->format('M d, Y') }}</div>
-                    </div>
-
-                    <div class="user-search-wrap" style="margin-bottom:14px">
-                        <input
-                            id="userSearchInput"
-                            type="search"
-                            class="user-search"
-                            placeholder="Search user ID, name, or contact number..."
-                            autocomplete="off"
-                            aria-label="Search user ID, name, or contact number"
-                        >
-                    </div>
-
-                    @if ($users->isEmpty())
-                        <div class="muted">No users have registered yet.</div>
-                    @else
-                        <div style="overflow:auto">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>User ID</th>
-                                        <th>Full Name</th>
-                                        <th>Contact</th>
-                                        <th>Status</th>
-                                        <th># Reports</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($users as $user)
-                                        @php
-                                            $userSearchText = collect([
-                                                $user->registration_code,
-                                                $user->full_name ?? $user->name,
-                                                $user->email,
-                                                $user->contact_number,
-                                            ])->filter()->implode(' ');
-                                        @endphp
-                                        <tr
-                                            data-user-id="{{ $user->id }}"
-                                            data-user-name="{{ e($user->full_name ?? $user->name) }}"
-                                            data-user-status="{{ $user->status ?? 'deactivated' }}"
-                                            data-user-search="{{ strtolower(e($userSearchText)) }}"
-                                        >
-                                            <td>{{ $user->registration_code }}</td>
-                                            <td><strong>{{ $user->full_name ?? $user->name }}</strong><div class="muted">{{ $user->email }}</div></td>
-                                            <td>{{ $user->contact_number ?? '-' }}</td>
-                                            <td><span class="user-status-badge {{ $user->status ?? 'deactivated' }}">{{ ucfirst(str_replace('_', ' ', $user->status ?? 'deactivated')) }}</span></td>
-                                            <td>{{ $user->reports_count ?? 0 }}</td>
-                                            <td>
-                                                <div class="action-group">
-                                                    <button class="btn-ghost" type="button" onclick="openUser({{ $user->id }})">View</button>
-                                                    <div class="action-dropdown" data-action-dropdown>
-                                                        <button class="btn-ghost action-dropdown-toggle" type="button" data-action-dropdown-toggle aria-haspopup="true" aria-expanded="false">
-                                                            Action
-                                                            <span aria-hidden="true">▾</span>
-                                                        </button>
-                                                        <div class="action-dropdown-menu" role="menu">
-                                                            @if (($user->status ?? 'deactivated') === 'suspended')
-                                                                <button type="button" class="danger" data-unsuspend-user="{{ $user->id }}">Unsuspend Account</button>
-                                                            @else
-                                                                <button type="button" data-suspend-user="{{ $user->id }}">Suspend Account</button>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="userNoResultsTable" class="user-no-results">No users match your search.</div>
-                    @endif
-                </div>
+                @include('admin.sections.user-management')
             @elseif ($section === 'pet-directory')
-                <div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
-                        
-                    </div>
-
-                    <!-- Vaccination Status Tabs -->
-                    <div class="tabs">
-                        <button class="tab active" onclick="filterPets('all')" id="tab-all">All Pets <span class="muted" style="margin-left:6px">({{ count($pets_by_status['vaccinated']) + count($pets_by_status['not_vaccinated']) + count($pets_by_status['unknown']) }})</span></button>
-                        <button class="tab" onclick="filterPets('vaccinated')" id="tab-vaccinated">Vaccinated <span class="muted" style="margin-left:6px">({{ count($pets_by_status['vaccinated']) }})</span></button>
-                        <button class="tab" onclick="filterPets('not_vaccinated')" id="tab-not-vaccinated">Unvaccinated <span class="muted" style="margin-left:6px">({{ count($pets_by_status['not_vaccinated']) }})</span></button>
-                        <button class="tab" onclick="filterPets('unknown')" id="tab-unknown">Unknown Status <span class="muted" style="margin-left:6px">({{ count($pets_by_status['unknown']) }})</span></button>
-                    </div>
-
-                    <!-- All Pets Grid -->
-                    <div id="pets-all" class="tab-panel">
-                        @php
-                            $allPets = collect($pets_by_status['vaccinated'])->merge($pets_by_status['not_vaccinated'])->merge($pets_by_status['unknown']);
-                        @endphp
-                        @if ($allPets->count() > 0)
-                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">
-                                @foreach ($allPets as $pet)
-                                    @include('admin.pet-card', ['pet' => $pet])
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="muted">No pets registered yet.</div>
-                        @endif
-                    </div>
-
-                    <!-- Vaccinated Pets Grid -->
-                    <div id="pets-vaccinated" class="tab-panel hidden">
-                        @if ($pets_by_status['vaccinated']->count() > 0)
-                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">
-                                @foreach ($pets_by_status['vaccinated'] as $pet)
-                                    @include('admin.pet-card', ['pet' => $pet])
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="muted">No vaccinated pets.</div>
-                        @endif
-                    </div>
-
-                    <!-- Unvaccinated Pets Grid -->
-                    <div id="pets-not_vaccinated" class="tab-panel hidden">
-                        @if ($pets_by_status['not_vaccinated']->count() > 0)
-                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">
-                                @foreach ($pets_by_status['not_vaccinated'] as $pet)
-                                    @include('admin.pet-card', ['pet' => $pet])
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="muted">No unvaccinated pets.</div>
-                        @endif
-                    </div>
-
-                    <!-- Unknown Status Pets Grid -->
-                    <div id="pets-unknown" class="tab-panel hidden">
-                        @if ($pets_by_status['unknown']->count() > 0)
-                            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px">
-                                @foreach ($pets_by_status['unknown'] as $pet)
-                                    @include('admin.pet-card', ['pet' => $pet])
-                                @endforeach
-                            </div>
-                        @else
-                            <div class="muted">No pets with unknown vaccination status.</div>
-                        @endif
-                    </div>
-                </div>
+                @include('admin.sections.pet-directory')
             @elseif ($section === 'report-management')
-                <div class="card">
-                    <div class="report-toolbar">
-                        <div>
-                            <strong>Report Management</strong>
-                            
-                        </div>
-                        <div class="report-filters">
-                            <div class="report-search-wrap">
-                                <input
-                                    id="reportSearchInput"
-                                    type="search"
-                                    class="report-search"
-                                    placeholder="Search reports..."
-                                    autocomplete="off"
-                                    aria-autocomplete="list"
-                                    aria-expanded="false"
-                                >
-                            </div>
-                            <div id="reportStatusDropdown" class="report-status-filters" aria-label="Filter reports by status">
-                                <span class="report-status-label">Status</span>
-                                <label class="status-checkbox">
-                                    <input type="checkbox" value="all" checked data-status-option>
-                                    <span>All Statuses</span>
-                                </label>
-                                <label class="status-checkbox">
-                                    <input type="checkbox" value="pending" checked data-status-option>
-                                    <span>Pending</span>
-                                </label>
-                                <label class="status-checkbox">
-                                    <input type="checkbox" value="in_progress" checked data-status-option>
-                                    <span>In Progress</span>
-                                </label>
-                                <label class="status-checkbox">
-                                    <input type="checkbox" value="resolved" checked data-status-option>
-                                    <span>Resolved</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    @if ($reports->isEmpty())
-                        <div class="muted">No reports have been submitted yet.</div>
-                    @else
-                        <div>
-                            @foreach ($reports as $report)
-                                @php
-                                    $reportCode = sprintf('R%s-%05d', optional($report->created_at)->format('y') ?? '00', $report->id);
-                                    $userCode = optional($report->user)
-                                        ? $report->user->registration_code
-                                        : null;
-                                @endphp
-                                @php
-                                    $reportSearchText = collect([
-                                        $reportCode,
-                                        $report->report_type,
-                                        $report->animal_type,
-                                        $userCode,
-                                        optional($report->user)->email,
-                                    ])->filter()->implode(' ');
-                                @endphp
-                                @php
-                                    $reportNextStatus = match ($report->status) {
-                                        'pending' => 'in_progress',
-                                        'in_progress' => 'resolved',
-                                        default => null,
-                                    };
-                                @endphp
-                                <div class="report-row" data-report-id="{{ $report->id }}" data-report-status="{{ $report->status }}" data-report-search="{{ strtolower(e($reportSearchText)) }}">
-                                    <div class="report-summary">
-                                        <h4>Report ID {{ $reportCode }} — {{ ucfirst($report->report_type) }} ({{ $report->animal_type }})</h4>
-                                        <span class="muted">Submitted: {{ $report->created_at->format('M d, Y') }}</span>
-                                        <span class="muted">User ID: {{ $userCode ?? '-' }}</span>
-                                        <div style="margin-top:8px">
-                                            <span class="report-status-pill {{ $report->status }}">{{ str_replace('_', ' ', $report->status) }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="report-actions">
-                                        <button class="btn-ghost" type="button" onclick="openReport({{ $report->id }})">View</button>
-                                        <button
-                                            class="report-status-row-action"
-                                            type="button"
-                                            @if (!$reportNextStatus) disabled @endif
-                                            data-next-status="{{ $reportNextStatus }}"
-                                            onclick="changeReportStatus({{ $report->id }}, this.dataset.nextStatus)"
-                                        >
-                                            {{ $reportNextStatus === 'in_progress' ? 'Mark In Progress' : ($reportNextStatus === 'resolved' ? 'Mark Resolved' : 'Resolved') }}
-                                        </button>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        <div id="reportNoResults" class="report-no-results muted">No reports match your search and status filters.</div>
-                    @endif
-                </div>
+                @include('admin.sections.report-management')
             @elseif ($section === 'announcements')
-                <div class="card announcement-tabs">
-                    <div class="announcement-tab-panels">
-                        <div id="announcement-create-panel" class="tab-panel">
-                            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-                                <div>
-                                    <strong>Post a new announcement</strong>
-                                </div>
-                               
-                            </div>
-
-                            <form class="announcement-form" method="POST" action="{{ route('admin.announcements.store') }}" enctype="multipart/form-data">
-                                @csrf
-                                <div class="field">
-                                    <label for="announcement-title">Title</label>
-                                    <input id="announcement-title" name="title" type="text" maxlength="255" required placeholder="Important update for pet owners">
-                                </div>
-
-                                <div class="field">
-                                    <label for="announcement-description">Description</label>
-                                    <textarea id="announcement-description" name="description" required placeholder="Write the full announcement here."></textarea>
-                                </div>
-
-                                <div class="field">
-                                    <label for="announcement-image">Image</label>
-                                    <input id="announcement-image" name="image" type="file" accept="image/*" data-image-preview-input="create">
-                                </div>
-
-                                <div id="announcement-create-preview" class="announcement-preview" aria-live="polite">
-                                    <img alt="Selected announcement preview" hidden>
-                                    <div class="muted">Image preview will appear here before publishing.</div>
-                                </div>
-
-                                <label class="checkbox-row">
-                                    <input type="checkbox" name="is_published" value="1" checked>
-                                    <span>Publish immediately</span>
-                                </label>
-
-                                <div>
-                                    <button class="btn" type="submit">Publish Announcement</button>
-                                </div>
-                            </form>
-                        </div>
-
-                        <div id="announcement-feed-panel" class="tab-panel hidden">
-                            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-                                <div>
-                                    <strong>Announcement feed</strong>
-                                    <div class="muted">Manage the posts currently shown to users.</div>
-                                </div>
-                                <div class="muted">{{ ($announcements ?? collect())->count() }} total posts</div>
-                            </div>
-
-                            @if (($announcements ?? collect())->isEmpty())
-                                <div class="muted">No announcements have been posted yet.</div>
-                            @else
-                                <div class="announcement-grid">
-                                    @foreach ($announcements as $announcement)
-                                        <article class="announcement-card">
-                                            @if ($announcement->image_path)
-                                                <img src="{{ route('api.media', ['path' => $announcement->image_path]) }}" alt="{{ $announcement->title }}">
-                                            @endif
-                                            <div class="announcement-body">
-                                                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
-                                                    <div>
-                                                        <h4 style="margin:0 0 6px 0">{{ $announcement->title }}</h4>
-                                                        <div class="muted">{{ $announcement->description }}</div>
-                                                    </div>
-                                                </div>
-                                                <div class="announcement-meta">
-                                                    <span>{{ optional($announcement->published_at ?? $announcement->created_at)->format('M d, Y h:i A') }}</span>
-                                                    <span>{{ $announcement->is_published ? 'Published' : 'Draft' }}</span>
-                                                </div>
-                                                <div class="announcement-actions">
-                                                    <button
-                                                        class="btn-ghost"
-                                                        type="button"
-                                                        data-announcement-edit-open="{{ $announcement->id }}"
-                                                        data-announcement-title="{{ e($announcement->title) }}"
-                                                        data-announcement-description="{{ e($announcement->description) }}"
-                                                        data-announcement-image="{{ $announcement->image_path ? route('api.media', ['path' => $announcement->image_path]) : '' }}"
-                                                        data-announcement-published="{{ $announcement->is_published ? 1 : 0 }}"
-                                                        data-announcement-update-url="{{ route('admin.announcements.update', $announcement) }}"
-                                                    >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        class="btn-ghost"
-                                                        type="button"
-                                                        style="color:var(--danger);border-color:#fecaca"
-                                                        data-announcement-delete-open="{{ $announcement->id }}"
-                                                        data-announcement-delete-url="{{ route('admin.announcements.destroy', $announcement) }}"
-                                                        data-announcement-delete-title="{{ e($announcement->title) }}"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </article>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
+                @include('admin.sections.announcements')
             @else
-                <div class="card">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                    </div>
-                    <div style="margin-bottom:16px">
-                        <div><strong>Admin</strong></div>
-                        <div class="muted">{{ auth('admin')->user()->email }}</div>
-                    </div>
-                    <form method="POST" action="{{ route('admin.logout') }}">
-                        @csrf
-                        <button class="btn" type="submit">Logout</button>
-                    </form>
-                </div>
+                @include('admin.sections.settings')
             @endif
         </main>
     </div>
@@ -678,6 +248,20 @@
                 <div><strong>Registered:</strong> <span id="modalRegistered"></span></div>
                 <div><strong>Pets count:</strong> <span id="modalPetsCount"></span></div>
                 <div><strong>Reports count:</strong> <span id="modalReportsCount"></span></div>
+            </div>
+
+            <div class="modal-section" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+                <div class="modal-section-title">
+                    <strong>Action History</strong>
+                </div>
+                <div id="modalActionHistory" class="modal-section-copy">No action history yet.</div>
+            </div>
+
+            <div class="modal-section">
+                <div class="modal-section-title">
+                    <strong>Account Actions</strong>
+                </div>
+                <div id="modalAccountActions" class="account-actions"></div>
             </div>
         </div>
     </div>
@@ -1180,19 +764,9 @@
             fetch('/admin/users/' + id + '/details')
                 .then(r => r.json())
                 .then(data => {
-                    const status = data.status || 'deactivated';
-                    document.getElementById('modalName').textContent = data.full_name || ('User ' + data.id);
-                    document.getElementById('modalEmail').textContent = data.email || '-';
-                    document.getElementById('modalContact').textContent = data.contact_number || '-';
-                    document.getElementById('modalAddress').textContent = data.address || '-';
-                    document.getElementById('modalStatus').className = 'user-status-badge ' + status;
-                    document.getElementById('modalStatus').textContent = status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
-                    document.getElementById('modalRegistered').textContent = data.registered_at || '-';
-                    document.getElementById('modalPetsCount').textContent = data.pets_count ?? 0;
-                    document.getElementById('modalReportsCount').textContent = data.reports_count ?? 0;
-                    document.getElementById('modalSubtitle').textContent = 'Overview';
+                    renderUserModal(data);
                     document.getElementById('tabOverview').classList.remove('hidden');
-                    document.getElementById('userModal').classList.add('show');
+                    userModal.classList.add('show');
                 })
                 .catch(err => {
                     alert('Unable to fetch user details');
@@ -1240,7 +814,18 @@
         const userSearchInput = document.getElementById('userSearchInput');
         const userRows = Array.from(document.querySelectorAll('tr[data-user-search]'));
         const userNoResults = document.getElementById('userNoResultsTable');
-        const actionDropdowns = Array.from(document.querySelectorAll('[data-action-dropdown]'));
+        const userModal = document.getElementById('userModal');
+        const modalName = document.getElementById('modalName');
+        const modalSubtitle = document.getElementById('modalSubtitle');
+        const modalEmail = document.getElementById('modalEmail');
+        const modalContact = document.getElementById('modalContact');
+        const modalAddress = document.getElementById('modalAddress');
+        const modalStatus = document.getElementById('modalStatus');
+        const modalRegistered = document.getElementById('modalRegistered');
+        const modalPetsCount = document.getElementById('modalPetsCount');
+        const modalReportsCount = document.getElementById('modalReportsCount');
+        const modalActionHistory = document.getElementById('modalActionHistory');
+        const modalAccountActions = document.getElementById('modalAccountActions');
         const suspensionModal = document.getElementById('suspensionModal');
         const suspensionConfirmModal = document.getElementById('suspensionConfirmModal');
         const suspensionForm = document.getElementById('suspensionForm');
@@ -1258,8 +843,10 @@
         const suspensionConfirmSummary = document.getElementById('suspensionConfirmSummary');
         const confirmSuspensionButton = document.getElementById('confirmSuspensionButton');
 
+        let currentUserModalData = null;
         let pendingSuspensionPayload = null;
         let pendingSuspensionUser = null;
+        let toastTimer = null;
 
         function normalizeReportText(value) {
             return String(value || '').toLowerCase().trim();
@@ -1273,53 +860,44 @@
             return document.querySelector('meta[name="csrf-token"]')?.content || '';
         }
 
-        function closeActionDropdowns(exceptDropdown = null) {
-            actionDropdowns.forEach(dropdown => {
-                if (dropdown !== exceptDropdown) {
-                    dropdown.classList.remove('open');
-                    const toggle = dropdown.querySelector('[data-action-dropdown-toggle]');
-                    if (toggle) {
-                        toggle.setAttribute('aria-expanded', 'false');
-                    }
-                }
-            });
+        function formatUserStatusLabel(status) {
+            const normalizedStatus = status || 'deactivated';
+
+            return normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1).replace('_', ' ');
         }
 
-        function bindActionDropdowns() {
-            actionDropdowns.forEach(dropdown => {
-                const toggle = dropdown.querySelector('[data-action-dropdown-toggle]');
-                if (!toggle) {
-                    return;
-                }
+        function showAccountActionToast(message, type = 'success') {
+            if (toastTimer) {
+                window.clearTimeout(toastTimer);
+            }
 
-                toggle.addEventListener('click', event => {
-                    event.stopPropagation();
-                    const isOpen = dropdown.classList.contains('open');
-                    closeActionDropdowns(dropdown);
-                    dropdown.classList.toggle('open', !isOpen);
-                    toggle.setAttribute('aria-expanded', String(!isOpen));
-                });
+            const existingToast = document.querySelector('[data-action-toast]');
+            if (existingToast) {
+                existingToast.remove();
+            }
 
-                dropdown.querySelectorAll('[data-suspend-user]').forEach(button => {
-                    button.addEventListener('click', event => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        closeActionDropdowns();
-                        openSuspensionModal(Number(button.dataset.suspendUser));
-                    });
-                });
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('data-action-toast', '1');
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <div class="toast-title">${type === 'success' ? 'Success' : 'Action failed'}</div>
+                    <p class="toast-message"></p>
+                </div>
+                <div class="toast-actions">
+                    <button class="toast-close" type="button" aria-label="Close notification" data-toast-close>×</button>
+                </div>
+            `;
 
-                dropdown.querySelectorAll('[data-unsuspend-user]').forEach(button => {
-                    button.addEventListener('click', event => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        closeActionDropdowns();
-                        unsuspendUser(Number(button.dataset.unsuspendUser));
-                    });
-                });
-            });
+            toast.querySelector('.toast-message').textContent = message;
+            toast.querySelector('[data-toast-close]').addEventListener('click', () => toast.remove());
+            document.body.appendChild(toast);
 
-            document.addEventListener('click', () => closeActionDropdowns());
+            toastTimer = window.setTimeout(() => {
+                toast.remove();
+            }, 4000);
         }
 
         function suspensionLabel(type) {
@@ -1380,6 +958,81 @@
             if (suspensionUserMeta) suspensionUserMeta.textContent = meta;
             if (suspensionUserStatus) suspensionUserStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
             if (suspensionUserSummary) suspensionUserSummary.textContent = summary;
+        }
+
+        function updateUserTableStatus(userId, status) {
+            const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+            if (!row) {
+                return;
+            }
+
+            row.dataset.userStatus = status;
+
+            const statusBadge = row.querySelector('.user-status-badge');
+            if (statusBadge) {
+                statusBadge.className = `user-status-badge ${status}`;
+                statusBadge.textContent = formatUserStatusLabel(status);
+            }
+        }
+
+        function renderUserAccountActions(data) {
+            if (!modalAccountActions) {
+                return;
+            }
+
+            const status = data.status || 'deactivated';
+
+            if (status === 'active') {
+                modalAccountActions.innerHTML = `
+                    <button class="btn btn-danger" type="button" onclick="openSuspensionModal(${data.id})">Suspend Account</button>
+                `;
+                return;
+            }
+
+            if (status === 'suspended') {
+                modalAccountActions.innerHTML = `
+                    <button class="btn" type="button" onclick="unsuspendUser(${data.id})">Unsuspend Account</button>
+                `;
+                return;
+            }
+
+            modalAccountActions.innerHTML = '<div class="muted">No suspension actions are available for deactivated accounts.</div>';
+        }
+
+        function renderUserModal(data) {
+            currentUserModalData = data;
+
+            const status = data.status || 'deactivated';
+
+            if (modalName) modalName.textContent = data.full_name || `User ${data.id}`;
+            if (modalSubtitle) modalSubtitle.textContent = 'Overview';
+            if (modalEmail) modalEmail.textContent = data.email || '-';
+            if (modalContact) modalContact.textContent = data.contact_number || '-';
+            if (modalAddress) modalAddress.textContent = data.address || '-';
+            if (modalStatus) {
+                modalStatus.className = `user-status-badge ${status}`;
+                modalStatus.textContent = formatUserStatusLabel(status);
+            }
+            if (modalRegistered) modalRegistered.textContent = data.registered_at || '-';
+            if (modalPetsCount) modalPetsCount.textContent = data.pets_count ?? 0;
+            if (modalReportsCount) modalReportsCount.textContent = data.reports_count ?? 0;
+            if (modalActionHistory) modalActionHistory.textContent = 'No action history yet.';
+
+            renderUserAccountActions(data);
+            updateUserTableStatus(data.id, status);
+        }
+
+        function refreshUserModalData(userId) {
+            if (!userId) {
+                return Promise.resolve();
+            }
+
+            return fetch(`/admin/users/${userId}/details`)
+                .then(response => response.json())
+                .then(data => {
+                    renderUserModal(data);
+                    return data;
+                });
         }
 
         function resetSuspensionDraft() {
@@ -1492,6 +1145,8 @@
                 return;
             }
 
+            const userId = pendingSuspensionUser.id;
+
             fetch(`/admin/users/${pendingSuspensionUser.id}/suspension`, {
                 method: 'PATCH',
                 headers: {
@@ -1508,10 +1163,14 @@
                         throw new Error(payload.message || 'Unable to suspend account');
                     }
 
-                    window.location.reload();
+                    closeModalElement(suspensionConfirmModal);
+                    closeSuspensionModal();
+                    showAccountActionToast('Account suspended successfully.', 'success');
+
+                    return refreshUserModalData(userId);
                 })
                 .catch(error => {
-                    alert(error.message || 'Unable to suspend account');
+                    showAccountActionToast('Failed to suspend the account. Please try again.', 'error');
                 });
         }
 
@@ -1530,10 +1189,14 @@
                         throw new Error(payload.message || 'Unable to unsuspend account');
                     }
 
-                    window.location.reload();
+                    closeModalElement(suspensionConfirmModal);
+                    closeSuspensionModal();
+                    showAccountActionToast('Account unsuspended successfully.', 'success');
+
+                    return refreshUserModalData(userId);
                 })
                 .catch(error => {
-                    alert(error.message || 'Unable to unsuspend account');
+                    showAccountActionToast('Failed to unsuspend the account. Please try again.', 'error');
                 });
         }
 
@@ -1634,8 +1297,6 @@
         }
 
         function initUserSuspensionWorkflow() {
-            bindActionDropdowns();
-
             if (suspensionTypeInput) {
                 suspensionTypeInput.addEventListener('change', syncSuspensionDurationField);
             }
