@@ -9,13 +9,13 @@
         :root{--bg:#f4f7f7;--panel:#fff;--text:#102a43;--muted:#627d98;--accent:#0f766e;--danger:#b42318;--border:#d9e2ec}
         *{box-sizing:border-box}
         body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:linear-gradient(180deg,#f8fbfc,var(--bg));color:var(--text)}
-        .app{display:flex;min-height:100vh}
-        .sidebar{width:260px;background:var(--panel);border-right:1px solid var(--border);padding:22px;display:flex;flex-direction:column;gap:18px}
+        .app{display:flex;min-height:100vh;align-items:flex-start}
+        .sidebar{width:260px;background:var(--panel);border-right:1px solid var(--border);padding:22px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh;overflow-y:auto;align-self:flex-start}
         .brand{font-weight:900;color:var(--accent);font-size:18px}
         .nav{display:flex;flex-direction:column;gap:6px}
         .nav a{display:block;padding:10px 12px;border-radius:10px;color:var(--text);text-decoration:none;font-weight:700}
         .nav a.active{background:#ecfdf3;color:var(--accent)}
-        .content{flex:1;padding:28px}
+        .content{flex:1;min-width:0;padding:28px}
         .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
         .card{background:var(--panel);border:1px solid rgba(15,23,42,.06);border-radius:12px;padding:18px}
         table{width:100%;border-collapse:collapse}
@@ -23,9 +23,14 @@
         th{font-size:12px;color:var(--muted);text-transform:uppercase}
         .btn{background:var(--accent);color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:700;border:none;cursor:pointer}
         .btn-ghost{background:transparent;border:1px solid var(--border);padding:8px 12px;border-radius:8px;cursor:pointer}
+        .btn-danger{background:var(--danger);color:#fff;border:none}
         .muted{color:var(--muted)}
         .status.active{color:#027a48;font-weight:700}
         .status.inactive{color:#b45309;font-weight:700}
+        .user-status-badge{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
+        .user-status-badge.active{background:#ecfdf3;color:#027a48}
+        .user-status-badge.suspended{background:#fffaeb;color:#b54708}
+        .user-status-badge.deactivated{background:#fef2f2;color:#b42318}
         .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-bottom:18px}
         .stat-card{background:#f8fffc;border:1px solid #d9f7ec;border-radius:14px;padding:18px}
         .stat-card strong{display:block;margin-bottom:6px}
@@ -54,6 +59,9 @@
         .status-checkbox input{accent-color:var(--accent)}
         .report-search-wrap{min-width:240px;max-width:360px;flex:1}
         .report-search{width:100%;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px 12px;font:inherit;color:var(--text)}
+        .user-search-wrap{min-width:240px;max-width:420px;flex:1}
+        .user-search{width:100%;border:1px solid var(--border);border-radius:10px;background:#fff;padding:10px 12px;font:inherit;color:var(--text)}
+        .user-no-results{display:none;margin-top:6px;padding:14px;border:1px dashed var(--border);border-radius:12px;background:#fbfdff}
         .report-no-results{display:none;margin-top:6px;padding:14px;border:1px dashed var(--border);border-radius:12px;background:#fbfdff}
         .report-status-pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.02em}
         .report-status-pill.pending{background:#fef3f2;color:#b42318}
@@ -63,6 +71,18 @@
         .report-status-row-action,.btn-status{background:var(--accent);color:#fff;border:none;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}
         .btn-status.secondary,.report-status-row-action.secondary{background:#f59e0b}
         .report-status-row-action[disabled],.btn-status[disabled]{opacity:.55;cursor:not-allowed}
+        .action-group{position:relative;display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}
+        .action-dropdown{position:relative}
+        .action-dropdown-toggle{display:inline-flex;align-items:center;gap:8px}
+        .action-dropdown-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:200px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 20px 40px rgba(15,23,42,.12);padding:8px;display:none;z-index:30}
+        .action-dropdown.open .action-dropdown-menu{display:block}
+        .action-dropdown-menu button,.action-dropdown-menu form{width:100%}
+        .action-dropdown-menu button{display:block;width:100%;text-align:left;background:transparent;border:none;padding:10px 12px;border-radius:10px;color:var(--text);font:inherit;font-weight:700;cursor:pointer}
+        .action-dropdown-menu button:hover{background:#f8fafc}
+        .action-dropdown-menu .danger{color:var(--danger)}
+        .modal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+        .modal-summary-card{border:1px solid var(--border);border-radius:14px;background:#f8fafc;padding:14px}
+        .modal-summary-card strong{display:block;margin-bottom:6px}
         .tabs{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
         .tab{background:transparent;border:1px solid var(--border);border-radius:999px;padding:10px 16px;color:var(--text);cursor:pointer;font-weight:700}
         .tab.active{background:#ecfdf3;color:var(--accent);border-color:#86efac}
@@ -77,21 +97,49 @@
         .report-media{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}
         .report-media img{width:calc(50% - 6px);max-width:220px;max-height:220px;border-radius:12px;object-fit:cover;border:1px solid #d9e2ec}
         .report-media video{width:100%;max-width:420px;border-radius:12px;border:1px solid #d9e2ec}
+        .announcement-header{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+        .announcement-header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
         .announcement-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
         .announcement-card{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 10px 25px rgba(15,23,42,.04)}
         .announcement-card img{width:100%;height:180px;object-fit:cover;display:block;background:#eef2f7}
         .announcement-body{padding:16px}
         .announcement-meta{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:10px;color:var(--muted);font-size:13px;flex-wrap:wrap}
-        .announcement-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+        .announcement-actions{display:flex;gap:8px;flex-wrap:nowrap;align-items:center;justify-content:flex-start;margin-top:14px}
+        .announcement-actions form{margin:0;display:flex;align-items:center}
+        .announcement-actions > *{flex:0 0 auto}
+        .announcement-actions .btn-ghost{white-space:nowrap}
+        .announcement-tabs{margin-top:8px}
+        .announcement-tab-panels{margin-top:16px}
+        .announcement-preview{display:none;align-items:center;justify-content:center;min-height:180px;border:1px dashed var(--border);border-radius:14px;background:#f8fafc;overflow:hidden}
+        .announcement-preview img{width:100%;height:100%;max-height:260px;object-fit:cover;display:block}
+        .announcement-preview.has-image{display:flex}
         .announcement-form{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:18px}
+        .modal-card.narrow{max-width:680px}
+        .modal-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:18px}
+        .modal-actions .btn,.modal-actions .btn-ghost{min-width:108px;justify-content:center}
+        .toast{position:fixed;top:24px;right:24px;z-index:1200;max-width:min(420px,calc(100vw - 32px));background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 40px rgba(15,23,42,.16);padding:16px;display:flex;gap:14px;align-items:flex-start}
+        .toast.success{border-color:#bbf7d0;background:#f0fdf4}
+        .toast.error{border-color:#fecaca;background:#fef2f2}
+        .toast-content{flex:1;min-width:0}
+        .toast-title{font-size:13px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;margin-bottom:4px}
+        .toast-message{margin:0;color:var(--text);line-height:1.45}
+        .toast-actions{display:flex;gap:8px;align-items:center;flex-shrink:0}
+        .toast-close{background:transparent;border:none;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;padding:4px 6px}
+        .toast-ok{padding:8px 14px;white-space:nowrap}
         .field{display:flex;flex-direction:column;gap:6px}
         .field label{font-weight:700;font-size:13px}
-        .field input,.field textarea{width:100%;border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;font:inherit;color:var(--text)}
+        .field input,.field textarea,.field select{width:100%;border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;font:inherit;color:var(--text)}
         .field textarea{min-height:140px;resize:vertical}
+        .field-help{font-size:12px;color:var(--muted);line-height:1.4}
+        .modal-section{display:flex;flex-direction:column;gap:14px}
+        .modal-section + .modal-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+        .suspension-summary-text{font-weight:700;color:var(--text)}
         .checkbox-row{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--text)}
         .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);display:flex;align-items:center;justify-content:center;padding:20px;visibility:hidden;opacity:0;transition:opacity .15s ease,visibility .15s}
         .modal.show{visibility:visible;opacity:1}
         .modal-card{background:#fff;border-radius:12px;max-width:880px;width:100%;padding:18px;max-height:calc(100vh - 60px);overflow:auto}
+        .modal-card.narrow{max-width:720px}
+        .modal-card.wide{max-width:980px}
         @media (max-width:800px){.sidebar{display:none}.content{padding:16px}}
     </style>
 </head>
@@ -127,16 +175,48 @@
                         <h2 style="margin:0">Report Management</h2>
                         
                     @elseif ($section === 'announcements')
-                        <h2 style="margin:0">Announcements</h2>
-                        
+                        <div class="announcement-header">
+                            <h2 style="margin:0">Announcements</h2>
+                            <div class="announcement-header-actions">
+                                <div class="tabs" role="tablist" aria-label="Announcement tabs">
+                                    <button class="tab active" type="button" data-announcement-tab="create">Creation</button>
+                                    <button class="tab" type="button" data-announcement-tab="feed">Feed List</button>
+                                </div>
+                            </div>
+                        </div>
                     @else
                         <h2 style="margin:0">Settings</h2>
                     @endif
                 </div>
             </div>
 
-            @if (session('success'))
-                <div class="card" style="margin-bottom:12px"><strong>Success:</strong> {{ session('success') }}</div>
+            @php
+                $toastType = null;
+                $toastMessage = null;
+
+                if (session('success')) {
+                    $toastType = 'success';
+                    $toastMessage = session('success');
+                } elseif (session('error')) {
+                    $toastType = 'error';
+                    $toastMessage = session('error');
+                } elseif ($errors->any()) {
+                    $toastType = 'error';
+                    $toastMessage = $errors->first();
+                }
+            @endphp
+
+            @if ($toastMessage)
+                <div class="toast {{ $toastType }}" role="alert" aria-live="assertive" data-toast>
+                    <div class="toast-content">
+                        <div class="toast-title">{{ $toastType === 'success' ? 'Success' : 'Action failed' }}</div>
+                        <p class="toast-message">{{ $toastMessage }}</p>
+                    </div>
+                    <div class="toast-actions">
+                        
+                        <button class="btn toast-ok" type="button" data-toast-close>OK</button>
+                    </div>
+                </div>
             @endif
 
             @if ($section === 'dashboard')
@@ -222,6 +302,17 @@
                         <div class="muted">Last updated: {{ now()->format('M d, Y') }}</div>
                     </div>
 
+                    <div class="user-search-wrap" style="margin-bottom:14px">
+                        <input
+                            id="userSearchInput"
+                            type="search"
+                            class="user-search"
+                            placeholder="Search user ID, name, or contact number..."
+                            autocomplete="off"
+                            aria-label="Search user ID, name, or contact number"
+                        >
+                    </div>
+
                     @if ($users->isEmpty())
                         <div class="muted">No users have registered yet.</div>
                     @else
@@ -232,24 +323,56 @@
                                         <th>User ID</th>
                                         <th>Full Name</th>
                                         <th>Contact</th>
+                                        <th>Status</th>
                                         <th># Reports</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($users as $user)
-                                        <tr>
+                                        @php
+                                            $userSearchText = collect([
+                                                $user->registration_code,
+                                                $user->full_name ?? $user->name,
+                                                $user->email,
+                                                $user->contact_number,
+                                            ])->filter()->implode(' ');
+                                        @endphp
+                                        <tr
+                                            data-user-id="{{ $user->id }}"
+                                            data-user-name="{{ e($user->full_name ?? $user->name) }}"
+                                            data-user-status="{{ $user->status ?? 'deactivated' }}"
+                                            data-user-search="{{ strtolower(e($userSearchText)) }}"
+                                        >
                                             <td>{{ $user->registration_code }}</td>
                                             <td><strong>{{ $user->full_name ?? $user->name }}</strong><div class="muted">{{ $user->email }}</div></td>
                                             <td>{{ $user->contact_number ?? '-' }}</td>
+                                            <td><span class="user-status-badge {{ $user->status ?? 'deactivated' }}">{{ ucfirst(str_replace('_', ' ', $user->status ?? 'deactivated')) }}</span></td>
                                             <td>{{ $user->reports_count ?? 0 }}</td>
                                             <td>
-                                                <button class="btn-ghost" onclick="openUser({{ $user->id }})">View</button>
+                                                <div class="action-group">
+                                                    <button class="btn-ghost" type="button" onclick="openUser({{ $user->id }})">View</button>
+                                                    <div class="action-dropdown" data-action-dropdown>
+                                                        <button class="btn-ghost action-dropdown-toggle" type="button" data-action-dropdown-toggle aria-haspopup="true" aria-expanded="false">
+                                                            Action
+                                                            <span aria-hidden="true">▾</span>
+                                                        </button>
+                                                        <div class="action-dropdown-menu" role="menu">
+                                                            @if (($user->status ?? 'deactivated') === 'suspended')
+                                                                <button type="button" class="danger" data-unsuspend-user="{{ $user->id }}">Unsuspend Account</button>
+                                                            @else
+                                                                <button type="button" data-suspend-user="{{ $user->id }}">Suspend Account</button>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </td>
+                                        </tr>
                                     @endforeach
                                 </tbody>
                             </table>
                         </div>
+                        <div id="userNoResultsTable" class="user-no-results">No users match your search.</div>
                     @endif
                 </div>
             @elseif ($section === 'pet-directory')
@@ -417,84 +540,109 @@
                     @endif
                 </div>
             @elseif ($section === 'announcements')
-                <div class="card" style="margin-bottom:16px">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-                        <div>
-                            <strong>Post a new announcement</strong>
-                            <div class="muted">Publish an image, title, and description to the homepage feed.</div>
+                <div class="card announcement-tabs">
+                    <div class="announcement-tab-panels">
+                        <div id="announcement-create-panel" class="tab-panel">
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+                                <div>
+                                    <strong>Post a new announcement</strong>
+                                </div>
+                               
+                            </div>
+
+                            <form class="announcement-form" method="POST" action="{{ route('admin.announcements.store') }}" enctype="multipart/form-data">
+                                @csrf
+                                <div class="field">
+                                    <label for="announcement-title">Title</label>
+                                    <input id="announcement-title" name="title" type="text" maxlength="255" required placeholder="Important update for pet owners">
+                                </div>
+
+                                <div class="field">
+                                    <label for="announcement-description">Description</label>
+                                    <textarea id="announcement-description" name="description" required placeholder="Write the full announcement here."></textarea>
+                                </div>
+
+                                <div class="field">
+                                    <label for="announcement-image">Image</label>
+                                    <input id="announcement-image" name="image" type="file" accept="image/*" data-image-preview-input="create">
+                                </div>
+
+                                <div id="announcement-create-preview" class="announcement-preview" aria-live="polite">
+                                    <img alt="Selected announcement preview" hidden>
+                                    <div class="muted">Image preview will appear here before publishing.</div>
+                                </div>
+
+                                <label class="checkbox-row">
+                                    <input type="checkbox" name="is_published" value="1" checked>
+                                    <span>Publish immediately</span>
+                                </label>
+
+                                <div>
+                                    <button class="btn" type="submit">Publish Announcement</button>
+                                </div>
+                            </form>
                         </div>
-                        <div class="muted">Visible to users after publishing</div>
-                    </div>
 
-                    <form class="announcement-form" method="POST" action="{{ route('admin.announcements.store') }}" enctype="multipart/form-data">
-                        @csrf
-                        <div class="field">
-                            <label for="announcement-title">Title</label>
-                            <input id="announcement-title" name="title" type="text" maxlength="255" required placeholder="Important update for pet owners">
-                        </div>
+                        <div id="announcement-feed-panel" class="tab-panel hidden">
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+                                <div>
+                                    <strong>Announcement feed</strong>
+                                    <div class="muted">Manage the posts currently shown to users.</div>
+                                </div>
+                                <div class="muted">{{ ($announcements ?? collect())->count() }} total posts</div>
+                            </div>
 
-                        <div class="field">
-                            <label for="announcement-description">Description</label>
-                            <textarea id="announcement-description" name="description" required placeholder="Write the full announcement here."></textarea>
-                        </div>
-
-                        <div class="field">
-                            <label for="announcement-image">Image</label>
-                            <input id="announcement-image" name="image" type="file" accept="image/*">
-                        </div>
-
-                        <label class="checkbox-row">
-                            <input type="checkbox" name="is_published" value="1" checked>
-                            <span>Publish immediately</span>
-                        </label>
-
-                        <div>
-                            <button class="btn" type="submit">Publish Announcement</button>
-                        </div>
-                    </form>
-                </div>
-
-                <div class="card">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-                        <div>
-                            <strong>Announcement feed</strong>
-                            <div class="muted">Manage the posts currently shown to users.</div>
-                        </div>
-                        <div class="muted">{{ ($announcements ?? collect())->count() }} total posts</div>
-                    </div>
-
-                    @if (($announcements ?? collect())->isEmpty())
-                        <div class="muted">No announcements have been posted yet.</div>
-                    @else
-                        <div class="announcement-grid">
-                            @foreach ($announcements as $announcement)
-                                <article class="announcement-card">
-                                    @if ($announcement->image_path)
-                                        <img src="{{ route('api.media', ['path' => $announcement->image_path]) }}" alt="{{ $announcement->title }}">
-                                    @endif
-                                    <div class="announcement-body">
-                                        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
-                                            <div>
-                                                <h4 style="margin:0 0 6px 0">{{ $announcement->title }}</h4>
-                                                <div class="muted">{{ $announcement->description }}</div>
+                            @if (($announcements ?? collect())->isEmpty())
+                                <div class="muted">No announcements have been posted yet.</div>
+                            @else
+                                <div class="announcement-grid">
+                                    @foreach ($announcements as $announcement)
+                                        <article class="announcement-card">
+                                            @if ($announcement->image_path)
+                                                <img src="{{ route('api.media', ['path' => $announcement->image_path]) }}" alt="{{ $announcement->title }}">
+                                            @endif
+                                            <div class="announcement-body">
+                                                <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
+                                                    <div>
+                                                        <h4 style="margin:0 0 6px 0">{{ $announcement->title }}</h4>
+                                                        <div class="muted">{{ $announcement->description }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="announcement-meta">
+                                                    <span>{{ optional($announcement->published_at ?? $announcement->created_at)->format('M d, Y h:i A') }}</span>
+                                                    <span>{{ $announcement->is_published ? 'Published' : 'Draft' }}</span>
+                                                </div>
+                                                <div class="announcement-actions">
+                                                    <button
+                                                        class="btn-ghost"
+                                                        type="button"
+                                                        data-announcement-edit-open="{{ $announcement->id }}"
+                                                        data-announcement-title="{{ e($announcement->title) }}"
+                                                        data-announcement-description="{{ e($announcement->description) }}"
+                                                        data-announcement-image="{{ $announcement->image_path ? route('api.media', ['path' => $announcement->image_path]) : '' }}"
+                                                        data-announcement-published="{{ $announcement->is_published ? 1 : 0 }}"
+                                                        data-announcement-update-url="{{ route('admin.announcements.update', $announcement) }}"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        class="btn-ghost"
+                                                        type="button"
+                                                        style="color:var(--danger);border-color:#fecaca"
+                                                        data-announcement-delete-open="{{ $announcement->id }}"
+                                                        data-announcement-delete-url="{{ route('admin.announcements.destroy', $announcement) }}"
+                                                        data-announcement-delete-title="{{ e($announcement->title) }}"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="announcement-meta">
-                                            <span>{{ optional($announcement->published_at ?? $announcement->created_at)->format('M d, Y h:i A') }}</span>
-                                            <span>{{ $announcement->is_published ? 'Published' : 'Draft' }}</span>
-                                        </div>
-                                        <div class="announcement-actions">
-                                            <form method="POST" action="{{ route('admin.announcements.destroy', $announcement) }}" onsubmit="return confirm('Delete this announcement?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn-ghost" type="submit" style="color:var(--danger);border-color:#fecaca">Delete</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </article>
-                            @endforeach
+                                        </article>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
-                    @endif
+                    </div>
                 </div>
             @else
                 <div class="card">
@@ -526,7 +674,7 @@
                 <div><strong>Email:</strong> <span id="modalEmail"></span></div>
                 <div><strong>Contact:</strong> <span id="modalContact"></span></div>
                 <div><strong>Address:</strong> <span id="modalAddress"></span></div>
-                <div><strong>Status:</strong> <span id="modalStatus"></span></div>
+                <div><strong>Status:</strong> <span id="modalStatus" class="user-status-badge"></span></div>
                 <div><strong>Registered:</strong> <span id="modalRegistered"></span></div>
                 <div><strong>Pets count:</strong> <span id="modalPetsCount"></span></div>
                 <div><strong>Reports count:</strong> <span id="modalReportsCount"></span></div>
@@ -547,6 +695,156 @@
                 </div>
             </div>
             <div id="reportDetails"></div>
+        </div>
+    </div>
+
+    <div id="suspensionModal" class="modal" role="dialog" aria-hidden="true">
+        <div class="modal-card narrow">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px">
+                <div>
+                    <h3 id="suspensionModalTitle" style="margin:0">Suspend Account</h3>
+                    <div class="muted" id="suspensionModalSubtitle">Choose a reason and duration before continuing.</div>
+                </div>
+                <button type="button" class="btn-ghost" data-suspension-close>Close</button>
+            </div>
+
+            <div class="modal-grid" style="margin-bottom:14px">
+                <div class="modal-summary-card">
+                    <strong>Account</strong>
+                    <div id="suspensionUserName" class="suspension-summary-text">-</div>
+                    <div id="suspensionUserMeta" class="muted">-</div>
+                </div>
+                <div class="modal-summary-card">
+                    <strong>Status</strong>
+                    <div id="suspensionUserStatus" class="suspension-summary-text">-</div>
+                    <div id="suspensionUserSummary" class="muted">-</div>
+                </div>
+            </div>
+
+            <form id="suspensionForm" class="announcement-form" method="POST">
+                @csrf
+                @method('PATCH')
+                <input type="hidden" id="suspensionTargetUserId" name="user_id" value="">
+
+                <div class="field">
+                    <label for="suspensionReason">Reason</label>
+                    <textarea id="suspensionReason" name="suspension_reason" required placeholder="Enter the reason for this suspension."></textarea>
+                </div>
+
+                <div class="field">
+                    <label for="suspensionType">Duration type</label>
+                    <select id="suspensionType" name="suspension_type" required>
+                        <option value="days">Days</option>
+                        <option value="weeks">Weeks</option>
+                        <option value="months">Months</option>
+                        <option value="permanent">Indefinite suspension</option>
+                    </select>
+                </div>
+
+                <div class="field" id="suspensionValueField">
+                    <label for="suspensionValue">Duration value</label>
+                    <input id="suspensionValue" name="suspension_value" type="number" min="1" step="1" value="1">
+                    <div class="field-help">Choose the number of days, weeks, or months.</div>
+                </div>
+
+                <div class="field">
+                    <label for="suspensionNote">Optional notes</label>
+                    <textarea id="suspensionNote" name="suspension_note" placeholder="Add any extra context or internal notes."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" data-suspension-close>Cancel</button>
+                    <button class="btn" type="submit">Suspend Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="suspensionConfirmModal" class="modal" role="dialog" aria-hidden="true">
+        <div class="modal-card narrow">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px">
+                <div>
+                    <h3 style="margin:0">Confirm Suspension</h3>
+                    <div class="muted">Are you sure you want to suspend this account?</div>
+                </div>
+                <button type="button" class="btn-ghost" data-suspension-confirm-cancel>Close</button>
+            </div>
+
+            <div class="modal-summary-card" style="margin-bottom:14px">
+                <strong id="suspensionConfirmUserName">-</strong>
+                <div id="suspensionConfirmSummary" class="muted">-</div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-ghost" data-suspension-confirm-cancel>Cancel</button>
+                <button id="confirmSuspensionButton" class="btn btn-danger" type="button">Confirm Suspension</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="announcementEditModal" class="modal" role="dialog" aria-hidden="true">
+        <div class="modal-card narrow">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px">
+                <div>
+                    <h3 id="announcementEditTitle" style="margin:0">Edit Announcement</h3>
+                    
+                </div>
+                
+            </div>
+            <form id="announcementEditForm" class="announcement-form" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PATCH')
+                <div class="field">
+                    <label for="announcement-edit-title">Title</label>
+                    <input id="announcement-edit-title" name="title" type="text" maxlength="255" required>
+                </div>
+
+                <div class="field">
+                    <label for="announcement-edit-description">Description</label>
+                    <textarea id="announcement-edit-description" name="description" required></textarea>
+                </div>
+
+                <div class="field">
+                    <label for="announcement-edit-image">Replace image</label>
+                    <input id="announcement-edit-image" name="image" type="file" accept="image/*" data-image-preview-input="modal-edit">
+                </div>
+
+                <div id="announcement-edit-preview" class="announcement-preview" aria-live="polite">
+                    <img alt="Selected announcement preview" hidden>
+                    <div class="muted">Current announcement image will show here.</div>
+                </div>
+
+                <label class="checkbox-row">
+                    <p id="announcement-edit-published" type="" name="is_published" >
+                    
+                </label>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" data-announcement-edit-close>Cancel</button>
+                    <button class="btn" type="submit">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="announcementDeleteModal" class="modal" role="dialog" aria-hidden="true">
+        <div class="modal-card narrow">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px">
+                <div>
+                    <h3 style="margin:0">Delete Announcement</h3>
+                    <div class="muted">This action cannot be undone.</div>
+                </div>
+                <button type="button" class="btn-ghost" data-announcement-delete-close>Close</button>
+            </div>
+            <p class="muted" id="announcementDeleteMessage" style="margin-top:0">Are you sure you want to delete this announcement?</p>
+            <form id="announcementDeleteForm" method="POST">
+                @csrf
+                @method('DELETE')
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" data-announcement-delete-close>Cancel</button>
+                    <button class="btn" type="submit" style="background:var(--danger)">Delete</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -865,6 +1163,10 @@
             if (document.getElementById('animalTypeChart')) renderAnimalTypeChart();
             if (document.getElementById('vaccinationChart')) renderVaccinationChart();
             if (document.getElementById('registeredPetTypeChart')) renderRegisteredPetTypeChart();
+            initToast();
+            initAnnouncementTabs();
+            initImagePreviews();
+            initAnnouncementActionModals();
 
             const trendRange = document.getElementById('trendRange');
             if (trendRange) {
@@ -878,11 +1180,13 @@
             fetch('/admin/users/' + id + '/details')
                 .then(r => r.json())
                 .then(data => {
+                    const status = data.status || 'deactivated';
                     document.getElementById('modalName').textContent = data.full_name || ('User ' + data.id);
                     document.getElementById('modalEmail').textContent = data.email || '-';
                     document.getElementById('modalContact').textContent = data.contact_number || '-';
                     document.getElementById('modalAddress').textContent = data.address || '-';
-                    document.getElementById('modalStatus').textContent = data.status ? data.status.charAt(0).toUpperCase() + data.status.slice(1) : '-';
+                    document.getElementById('modalStatus').className = 'user-status-badge ' + status;
+                    document.getElementById('modalStatus').textContent = status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
                     document.getElementById('modalRegistered').textContent = data.registered_at || '-';
                     document.getElementById('modalPetsCount').textContent = data.pets_count ?? 0;
                     document.getElementById('modalReportsCount').textContent = data.reports_count ?? 0;
@@ -933,9 +1237,304 @@
         const reportStatusInputs = reportStatusDropdown
             ? Array.from(reportStatusDropdown.querySelectorAll('input[data-status-option]'))
             : [];
+        const userSearchInput = document.getElementById('userSearchInput');
+        const userRows = Array.from(document.querySelectorAll('tr[data-user-search]'));
+        const userNoResults = document.getElementById('userNoResultsTable');
+        const actionDropdowns = Array.from(document.querySelectorAll('[data-action-dropdown]'));
+        const suspensionModal = document.getElementById('suspensionModal');
+        const suspensionConfirmModal = document.getElementById('suspensionConfirmModal');
+        const suspensionForm = document.getElementById('suspensionForm');
+        const suspensionTargetUserId = document.getElementById('suspensionTargetUserId');
+        const suspensionReasonInput = document.getElementById('suspensionReason');
+        const suspensionTypeInput = document.getElementById('suspensionType');
+        const suspensionValueField = document.getElementById('suspensionValueField');
+        const suspensionValueInput = document.getElementById('suspensionValue');
+        const suspensionNoteInput = document.getElementById('suspensionNote');
+        const suspensionUserName = document.getElementById('suspensionUserName');
+        const suspensionUserMeta = document.getElementById('suspensionUserMeta');
+        const suspensionUserStatus = document.getElementById('suspensionUserStatus');
+        const suspensionUserSummary = document.getElementById('suspensionUserSummary');
+        const suspensionConfirmUserName = document.getElementById('suspensionConfirmUserName');
+        const suspensionConfirmSummary = document.getElementById('suspensionConfirmSummary');
+        const confirmSuspensionButton = document.getElementById('confirmSuspensionButton');
+
+        let pendingSuspensionPayload = null;
+        let pendingSuspensionUser = null;
 
         function normalizeReportText(value) {
             return String(value || '').toLowerCase().trim();
+        }
+
+        function normalizeUserText(value) {
+            return String(value || '').toLowerCase().trim();
+        }
+
+        function getCsrfToken() {
+            return document.querySelector('meta[name="csrf-token"]')?.content || '';
+        }
+
+        function closeActionDropdowns(exceptDropdown = null) {
+            actionDropdowns.forEach(dropdown => {
+                if (dropdown !== exceptDropdown) {
+                    dropdown.classList.remove('open');
+                    const toggle = dropdown.querySelector('[data-action-dropdown-toggle]');
+                    if (toggle) {
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                }
+            });
+        }
+
+        function bindActionDropdowns() {
+            actionDropdowns.forEach(dropdown => {
+                const toggle = dropdown.querySelector('[data-action-dropdown-toggle]');
+                if (!toggle) {
+                    return;
+                }
+
+                toggle.addEventListener('click', event => {
+                    event.stopPropagation();
+                    const isOpen = dropdown.classList.contains('open');
+                    closeActionDropdowns(dropdown);
+                    dropdown.classList.toggle('open', !isOpen);
+                    toggle.setAttribute('aria-expanded', String(!isOpen));
+                });
+
+                dropdown.querySelectorAll('[data-suspend-user]').forEach(button => {
+                    button.addEventListener('click', event => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        closeActionDropdowns();
+                        openSuspensionModal(Number(button.dataset.suspendUser));
+                    });
+                });
+
+                dropdown.querySelectorAll('[data-unsuspend-user]').forEach(button => {
+                    button.addEventListener('click', event => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        closeActionDropdowns();
+                        unsuspendUser(Number(button.dataset.unsuspendUser));
+                    });
+                });
+            });
+
+            document.addEventListener('click', () => closeActionDropdowns());
+        }
+
+        function suspensionLabel(type) {
+            if (type === 'days') {
+                return 'Days';
+            }
+
+            if (type === 'weeks') {
+                return 'Weeks';
+            }
+
+            if (type === 'months') {
+                return 'Months';
+            }
+
+            if (type === 'permanent') {
+                return 'Indefinite';
+            }
+
+            return 'Unknown';
+        }
+
+        function syncSuspensionDurationField() {
+            if (!suspensionTypeInput || !suspensionValueField || !suspensionValueInput) {
+                return;
+            }
+
+            const isPermanent = suspensionTypeInput.value === 'permanent';
+            suspensionValueField.classList.toggle('hidden', isPermanent);
+            suspensionValueInput.required = !isPermanent;
+
+            if (isPermanent) {
+                suspensionValueInput.value = '';
+            } else if (!suspensionValueInput.value) {
+                suspensionValueInput.value = '1';
+            }
+        }
+
+        function openModal(modalElement) {
+            if (modalElement) {
+                modalElement.classList.add('show');
+            }
+        }
+
+        function closeModalElement(modalElement) {
+            if (modalElement) {
+                modalElement.classList.remove('show');
+            }
+        }
+
+        function formatUserSummary(data) {
+            const name = data.full_name || data.name || `User ${data.id}`;
+            const meta = [data.email || '-', data.contact_number || '-'].join(' • ');
+            const summary = data.suspension_summary || 'No active suspension.';
+            const status = data.status || 'deactivated';
+
+            if (suspensionUserName) suspensionUserName.textContent = name;
+            if (suspensionUserMeta) suspensionUserMeta.textContent = meta;
+            if (suspensionUserStatus) suspensionUserStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+            if (suspensionUserSummary) suspensionUserSummary.textContent = summary;
+        }
+
+        function resetSuspensionDraft() {
+            pendingSuspensionPayload = null;
+            pendingSuspensionUser = null;
+
+            if (suspensionForm) {
+                suspensionForm.reset();
+            }
+
+            if (suspensionTargetUserId) {
+                suspensionTargetUserId.value = '';
+            }
+
+            syncSuspensionDurationField();
+        }
+
+        function populateSuspensionModal(data) {
+            pendingSuspensionUser = data;
+
+            if (suspensionTargetUserId) {
+                suspensionTargetUserId.value = data.id;
+            }
+
+            if (suspensionForm) {
+                suspensionForm.action = `/admin/users/${data.id}/suspension`;
+            }
+
+            if (suspensionReasonInput) {
+                suspensionReasonInput.value = '';
+            }
+
+            if (suspensionTypeInput) {
+                suspensionTypeInput.value = 'days';
+            }
+
+            if (suspensionValueInput) {
+                suspensionValueInput.value = '1';
+            }
+
+            if (suspensionNoteInput) {
+                suspensionNoteInput.value = '';
+            }
+
+            formatUserSummary(data);
+            syncSuspensionDurationField();
+        }
+
+        function openSuspensionModal(userId) {
+            fetch(`/admin/users/${userId}/details`)
+                .then(response => response.json())
+                .then(data => {
+                    const currentStatus = data.status || 'deactivated';
+
+                    if (currentStatus === 'suspended') {
+                        unsuspendUser(userId);
+                        return;
+                    }
+
+                    populateSuspensionModal(data);
+                    openModal(suspensionModal);
+                })
+                .catch(() => {
+                    alert('Unable to load user details');
+                });
+        }
+
+        function closeSuspensionModal() {
+            closeModalElement(suspensionModal);
+            resetSuspensionDraft();
+        }
+
+        function showSuspensionConfirmation(payload) {
+            pendingSuspensionPayload = payload;
+
+            const durationText = payload.suspension_type === 'permanent'
+                ? 'Indefinite suspension'
+                : `${payload.suspension_value} ${suspensionLabel(payload.suspension_type).toLowerCase()}`;
+
+            if (suspensionConfirmUserName) {
+                suspensionConfirmUserName.textContent = pendingSuspensionUser?.full_name || pendingSuspensionUser?.name || `User ${pendingSuspensionUser?.id || ''}`;
+            }
+
+            if (suspensionConfirmSummary) {
+                suspensionConfirmSummary.textContent = `${payload.suspension_reason} • ${durationText}`;
+            }
+
+            closeModalElement(suspensionModal);
+            openModal(suspensionConfirmModal);
+        }
+
+        function buildSuspensionPayload() {
+            const formData = new FormData(suspensionForm);
+            const suspensionType = String(formData.get('suspension_type') || 'days');
+            const payload = {
+                suspension_reason: String(formData.get('suspension_reason') || '').trim(),
+                suspension_type: suspensionType,
+                suspension_note: String(formData.get('suspension_note') || '').trim(),
+            };
+
+            if (suspensionType !== 'permanent') {
+                payload.suspension_value = String(formData.get('suspension_value') || '').trim();
+            }
+
+            return payload;
+        }
+
+        function submitSuspensionPayload() {
+            if (!pendingSuspensionUser || !pendingSuspensionPayload) {
+                return;
+            }
+
+            fetch(`/admin/users/${pendingSuspensionUser.id}/suspension`, {
+                method: 'PATCH',
+                headers: {
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(pendingSuspensionPayload),
+            })
+                .then(async response => {
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Unable to suspend account');
+                    }
+
+                    window.location.reload();
+                })
+                .catch(error => {
+                    alert(error.message || 'Unable to suspend account');
+                });
+        }
+
+        function unsuspendUser(userId) {
+            fetch(`/admin/users/${userId}/suspension`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+            })
+                .then(async response => {
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.message || 'Unable to unsuspend account');
+                    }
+
+                    window.location.reload();
+                })
+                .catch(error => {
+                    alert(error.message || 'Unable to unsuspend account');
+                });
         }
 
         function getSelectedReportStatuses() {
@@ -1034,7 +1633,95 @@
             applyReportFilters();
         }
 
+        function initUserSuspensionWorkflow() {
+            bindActionDropdowns();
+
+            if (suspensionTypeInput) {
+                suspensionTypeInput.addEventListener('change', syncSuspensionDurationField);
+            }
+
+            if (suspensionForm) {
+                suspensionForm.addEventListener('submit', event => {
+                    event.preventDefault();
+                    showSuspensionConfirmation(buildSuspensionPayload());
+                });
+            }
+
+            if (confirmSuspensionButton) {
+                confirmSuspensionButton.addEventListener('click', submitSuspensionPayload);
+            }
+
+            document.querySelectorAll('[data-suspension-close]').forEach(button => {
+                button.addEventListener('click', closeSuspensionModal);
+            });
+
+            document.querySelectorAll('[data-suspension-confirm-cancel]').forEach(button => {
+                button.addEventListener('click', () => {
+                    closeModalElement(suspensionConfirmModal);
+                    openModal(suspensionModal);
+                });
+            });
+
+            if (suspensionModal) {
+                suspensionModal.addEventListener('click', event => {
+                    if (event.target === suspensionModal) {
+                        closeSuspensionModal();
+                    }
+                });
+            }
+
+            if (suspensionConfirmModal) {
+                suspensionConfirmModal.addEventListener('click', event => {
+                    if (event.target === suspensionConfirmModal) {
+                        closeModalElement(suspensionConfirmModal);
+                    }
+                });
+            }
+
+            syncSuspensionDurationField();
+        }
+
+        function applyUserFilters() {
+            if (!userRows.length) {
+                return;
+            }
+
+            const searchQuery = normalizeUserText(userSearchInput ? userSearchInput.value : '');
+            let visibleCount = 0;
+
+            userRows.forEach(row => {
+                const rowSearch = row.dataset.userSearch || '';
+                const visible = !searchQuery || rowSearch.includes(searchQuery);
+
+                row.classList.toggle('hidden', !visible);
+                if (visible) {
+                    visibleCount += 1;
+                }
+            });
+
+            if (userNoResults) {
+                userNoResults.style.display = visibleCount === 0 ? 'block' : 'none';
+                userNoResults.textContent = searchQuery
+                    ? 'No users match your search.'
+                    : 'No users are available.';
+            }
+        }
+
+        function initUserManagementSearch() {
+            if (!userSearchInput || !userRows.length) {
+                return;
+            }
+
+            userSearchInput.addEventListener('input', () => {
+                applyUserFilters();
+            });
+
+            applyUserFilters();
+        }
+
         document.addEventListener('DOMContentLoaded', initReportManagementFilters);
+        document.addEventListener('DOMContentLoaded', initUserManagementSearch);
+        document.addEventListener('DOMContentLoaded', initUserSuspensionWorkflow);
 
         const mediaBaseUrl = @json(url('/api/media'));
 
@@ -1083,6 +1770,242 @@
 
         function closeModal() { document.getElementById('userModal').classList.remove('show'); }
         function closeReportModal() { document.getElementById('reportModal').classList.remove('show'); }
+
+        function initUserSuspensionControls() {
+            if (suspensionTypeInput) {
+                suspensionTypeInput.addEventListener('change', syncSuspensionDurationField);
+                syncSuspensionDurationField();
+            }
+        }
+
+        function initAnnouncementTabs() {
+            const tabButtons = Array.from(document.querySelectorAll('[data-announcement-tab]'));
+            const createPanel = document.getElementById('announcement-create-panel');
+            const feedPanel = document.getElementById('announcement-feed-panel');
+
+            if (!tabButtons.length || !createPanel || !feedPanel) {
+                return;
+            }
+
+            const panels = {
+                create: createPanel,
+                feed: feedPanel,
+            };
+
+            function showAnnouncementTab(tabName) {
+                tabButtons.forEach(button => {
+                    button.classList.toggle('active', button.dataset.announcementTab === tabName);
+                });
+
+                Object.entries(panels).forEach(([name, panel]) => {
+                    panel.classList.toggle('hidden', name !== tabName);
+                });
+            }
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => showAnnouncementTab(button.dataset.announcementTab));
+            });
+
+            showAnnouncementTab('create');
+        }
+
+        function initImagePreviews() {
+            const previewInputs = Array.from(document.querySelectorAll('[data-image-preview-input]'));
+
+            previewInputs.forEach(input => {
+                const previewKey = input.dataset.imagePreviewInput;
+                const previewId = previewKey === 'create'
+                    ? 'announcement-create-preview'
+                    : previewKey === 'modal-edit'
+                        ? 'announcement-edit-preview'
+                        : `announcement-edit-preview-${previewKey.replace('edit-', '')}`;
+                const preview = document.getElementById(previewId);
+
+                if (!preview) {
+                    return;
+                }
+
+                const previewImage = preview.querySelector('img');
+                const previewText = preview.querySelector('.muted');
+
+                input.addEventListener('change', () => {
+                    const file = input.files && input.files[0] ? input.files[0] : null;
+
+                    if (!file) {
+                        if (previewImage) {
+                            previewImage.removeAttribute('src');
+                            previewImage.hidden = true;
+                        }
+                        if (previewText) {
+                            previewText.textContent = previewId === 'announcement-create-preview'
+                                ? 'Image preview will appear here before publishing.'
+                                : 'Current announcement image will stay unchanged unless you choose a new one.';
+                            previewText.hidden = false;
+                        }
+                        preview.classList.toggle('has-image', false);
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = event => {
+                        if (previewImage && event.target?.result) {
+                            previewImage.src = String(event.target.result);
+                            previewImage.hidden = false;
+                        }
+                        if (previewText) {
+                            previewText.hidden = true;
+                        }
+                        preview.classList.add('has-image');
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+        }
+
+        function openAnnouncementEditModal(announcementData) {
+            const modal = document.getElementById('announcementEditModal');
+            const form = document.getElementById('announcementEditForm');
+            const titleInput = document.getElementById('announcement-edit-title');
+            const descriptionInput = document.getElementById('announcement-edit-description');
+            const publishedInput = document.getElementById('announcement-edit-published');
+            const preview = document.getElementById('announcement-edit-preview');
+            const previewImage = preview ? preview.querySelector('img') : null;
+            const previewText = preview ? preview.querySelector('.muted') : null;
+
+            if (!modal || !form || !titleInput || !descriptionInput || !publishedInput || !preview) {
+                return;
+            }
+
+            form.action = announcementData.updateUrl || form.action;
+            titleInput.value = announcementData.title || '';
+            descriptionInput.value = announcementData.description || '';
+            publishedInput.checked = Boolean(Number(announcementData.isPublished || 0));
+            preview.dataset.currentImage = announcementData.imageUrl || '';
+
+            if (previewImage) {
+                if (announcementData.imageUrl) {
+                    previewImage.src = announcementData.imageUrl;
+                    previewImage.hidden = false;
+                    preview.classList.add('has-image');
+                } else {
+                    previewImage.removeAttribute('src');
+                    previewImage.hidden = true;
+                    preview.classList.remove('has-image');
+                }
+            }
+
+            if (previewText) {
+                previewText.textContent = announcementData.imageUrl
+                    ? 'Current announcement image is shown here. Choose a new file to replace it.'
+                    : 'No image currently set. Choose a file to add one.';
+                previewText.hidden = Boolean(announcementData.imageUrl);
+            }
+
+            modal.classList.add('show');
+        }
+
+        function closeAnnouncementEditModal() {
+            const modal = document.getElementById('announcementEditModal');
+            const form = document.getElementById('announcementEditForm');
+
+            if (form) {
+                form.reset();
+            }
+
+            if (modal) {
+                modal.classList.remove('show');
+            }
+        }
+
+        function openAnnouncementDeleteModal(deleteUrl, title) {
+            const modal = document.getElementById('announcementDeleteModal');
+            const form = document.getElementById('announcementDeleteForm');
+            const message = document.getElementById('announcementDeleteMessage');
+
+            if (!modal || !form || !message) {
+                return;
+            }
+
+            form.action = deleteUrl;
+            message.textContent = title
+                ? `Are you sure you want to delete "${title}"? This action cannot be undone.`
+                : 'Are you sure you want to delete this announcement? This action cannot be undone.';
+            modal.classList.add('show');
+        }
+
+        function closeAnnouncementDeleteModal() {
+            const modal = document.getElementById('announcementDeleteModal');
+
+            if (modal) {
+                modal.classList.remove('show');
+            }
+        }
+
+        function initToast() {
+            const toast = document.querySelector('[data-toast]');
+            if (!toast) {
+                return;
+            }
+
+            const closeButtons = Array.from(toast.querySelectorAll('[data-toast-close]'));
+            closeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    toast.remove();
+                });
+            });
+        }
+
+        function initAnnouncementActionModals() {
+            const editButtons = Array.from(document.querySelectorAll('[data-announcement-edit-open]'));
+            editButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    openAnnouncementEditModal({
+                        updateUrl: button.dataset.announcementEditOpen ? button.dataset.announcementUpdateUrl : button.dataset.announcementUpdateUrl,
+                        title: button.dataset.announcementTitle || '',
+                        description: button.dataset.announcementDescription || '',
+                        imageUrl: button.dataset.announcementImage || '',
+                        isPublished: button.dataset.announcementPublished || '0',
+                    });
+                });
+            });
+
+            const deleteButtons = Array.from(document.querySelectorAll('[data-announcement-delete-open]'));
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    openAnnouncementDeleteModal(
+                        button.dataset.announcementDeleteUrl || '',
+                        button.dataset.announcementDeleteTitle || ''
+                    );
+                });
+            });
+
+            Array.from(document.querySelectorAll('[data-announcement-edit-close]')).forEach(button => {
+                button.addEventListener('click', closeAnnouncementEditModal);
+            });
+
+            Array.from(document.querySelectorAll('[data-announcement-delete-close]')).forEach(button => {
+                button.addEventListener('click', closeAnnouncementDeleteModal);
+            });
+
+            const editModal = document.getElementById('announcementEditModal');
+            const deleteModal = document.getElementById('announcementDeleteModal');
+
+            if (editModal) {
+                editModal.addEventListener('click', event => {
+                    if (event.target === editModal) {
+                        closeAnnouncementEditModal();
+                    }
+                });
+            }
+
+            if (deleteModal) {
+                deleteModal.addEventListener('click', event => {
+                    if (event.target === deleteModal) {
+                        closeAnnouncementDeleteModal();
+                    }
+                });
+            }
+        }
 
         function filterPets(status) {
             // Hide all tabs

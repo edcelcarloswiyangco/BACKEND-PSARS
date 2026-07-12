@@ -32,6 +32,13 @@ class User extends Authenticatable
         'password',
         'contact_number',
         'address',
+        'status',
+        'suspension_type',
+        'suspension_value',
+        'suspension_reason',
+        'suspension_note',
+        'suspended_at',
+        'suspension_ends_at',
         'registration_year',
         'registration_sequence',
     ];
@@ -55,8 +62,11 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'suspended_at' => 'datetime',
+            'suspension_ends_at' => 'datetime',
             'registration_year' => 'integer',
             'registration_sequence' => 'integer',
+            'suspension_value' => 'integer',
             'password' => 'hashed',
         ];
     }
@@ -82,5 +92,45 @@ class User extends Authenticatable
 
             return static::query()->create($attributes);
         });
+    }
+
+    public function accountStatus(): string
+    {
+        if ($this->status === 'suspended') {
+            if ($this->suspension_type !== 'permanent' && $this->suspension_ends_at && $this->suspension_ends_at->isPast()) {
+                return $this->email_verified_at ? 'active' : 'deactivated';
+            }
+
+            return 'suspended';
+        }
+
+        if (in_array($this->status, ['active', 'deactivated'], true)) {
+            return $this->status;
+        }
+
+        return $this->email_verified_at ? 'active' : 'deactivated';
+    }
+
+    public function suspensionSummary(): ?string
+    {
+        if ($this->accountStatus() !== 'suspended') {
+            return null;
+        }
+
+        if ($this->suspension_type === 'permanent') {
+            return 'Permanent suspension';
+        }
+
+        if ($this->suspension_ends_at) {
+            return 'Suspended until ' . $this->suspension_ends_at->format('M d, Y');
+        }
+
+        if ($this->suspension_value) {
+            $unit = $this->suspension_type === 'months' ? 'months' : ($this->suspension_type === 'weeks' ? 'weeks' : 'days');
+
+            return 'Suspended for ' . $this->suspension_value . ' ' . $unit;
+        }
+
+        return 'Suspended';
     }
 }
