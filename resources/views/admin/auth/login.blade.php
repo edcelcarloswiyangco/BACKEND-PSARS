@@ -99,7 +99,7 @@
                 <button type="submit">Login</button>
             </div>
 
-            <div class="hint">Default local admin: admin@example.com / admin1234</div>
+            <div class="hint">Default local admin: admin@example.com / Admin1234@</div>
         </form>
     </div>
 </body>

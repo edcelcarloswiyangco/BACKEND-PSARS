@@ -14,7 +14,7 @@ class AdminSeeder extends Seeder
         Admin::query()->updateOrCreate(
             ['email' => env('ADMIN_EMAIL', 'admin@example.com')],
             [
-                'password' => Hash::make(env('ADMIN_PASSWORD', 'admin1234')),
+                'password' => Hash::make(env('ADMIN_PASSWORD', 'Admin1234@')),
                 'role' => 'admin',
             ]
         );
